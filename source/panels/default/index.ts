@@ -1,3 +1,11 @@
+/**
+ * MCP Server control panel.
+ *
+ * Displays server status (running / stopped), connected clients,
+ * and a settings form (port, autoStart, debugLog, maxConnections).
+ * Status refreshes every 2 seconds via polling.
+ */
+
 import { readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { createApp, App, defineComponent, ref, computed, onMounted, watch } from 'vue';

@@ -63,8 +63,8 @@ function toSerializable(value: any, depth = 0): any {
         try {
             const json = JSON.stringify(value);
             if (json !== undefined) return value;
-        } catch { /* not serializable as-is */ }
-        // Try to extract enumerable own properties.
+        } catch { /* not JSON-serializable as-is */ }
+        // Extract enumerable own properties, skipping internals.
         const out: Record<string, any> = {};
         for (const key of Object.keys(value)) {
             if (key.startsWith('_') || key.startsWith('__')) continue;
@@ -256,7 +256,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── Tween 动画 ──
+    // ── Tween ──
 
     createTween(nodeUuid: string, properties: Record<string, any>, duration: number = 1.0, easing: string = 'linear', mode: string = 'to', delay: number = 0, repeat: number = 0) {
         try {
@@ -296,7 +296,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── Spine 动画 ──
+    // ── Spine ──
 
     setSpineAnimation(nodeUuid: string, animationName: string, loop: boolean = true, trackIndex: number = 0) {
         try {
@@ -325,7 +325,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── DragonBones 动画 ──
+    // ── DragonBones ──
 
     setDragonBonesAnimation(nodeUuid: string, animationName: string, playTimes: number = -1) {
         try {
@@ -353,7 +353,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── Graphics 绘图 ──
+    // ── Graphics ──
 
     executeGraphics(nodeUuid: string, commands: Array<Record<string, any>>) {
         try {
@@ -384,7 +384,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── 音频播放 ──
+    // ── Audio ──
 
     playAudio(nodeUuid: string) {
         try {
@@ -425,7 +425,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── ScrollView 滚动 ──
+    // ── ScrollView ──
 
     scrollScrollView(nodeUuid: string, position: { x: number; y: number }, animated: boolean = true) {
         try {
@@ -444,7 +444,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── PageView 翻页 ──
+    // ── PageView ──
 
     setPageViewIndex(nodeUuid: string, pageIndex: number) {
         try {
@@ -459,7 +459,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── 场景统计 ──
+    // ── Scene statistics ──
 
     getSceneStatistics() {
         try {
@@ -489,9 +489,9 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── 预制体模板创建 ──
+    // ── Prefab template ──
 
-    // ── Spine 动画扩展 ──
+    // ── Spine extensions ──
 
     setSpineMix(nodeUuid: string, fromAnimation: string, toAnimation: string, duration: number) {
         try {
@@ -523,23 +523,23 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── 预制体断开关联 ──
+    // ── Prefab unlink ──
 
     unlinkPrefab(nodeUuid: string) {
         try {
-            // Cocos Creator 编辑器通过 scene:unlink-prefab 处理
-            // 场景脚本无法直接操作，返回提示由编辑器 API 处理
+            // Prefab unlinking goes through scene:unlink-prefab in the editor process;
+            // the scene script cannot do it directly.
             return { success: true, message: 'Use scene channel unlink-prefab API from editor process' };
         } catch (err: any) {
             return { success: false, error: err.message };
         }
     },
 
-    // ── 预制体从节点创建 ──
+    // ── Prefab from node ──
 
     createPrefabFromNode(nodeUuid: string, savePath?: string) {
-        // 实际创建由编辑器主进程 scene:create-prefab 处理
-        // 场景脚本只做节点存在性验证
+        // Actual creation is handled by scene:create-prefab in the editor process.
+        // The scene script only validates node existence.
         try {
             const r = nodeOrError(nodeUuid);
             if (!('node' in r)) return r;
@@ -549,7 +549,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── TiledMap 信息查询 ──
+    // ── TiledMap ──
 
     getTiledMapLayers(nodeUuid: string) {
         try {
@@ -558,7 +558,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
             const tm = r.node.getComponent('cc.TiledMap');
             if (!tm) return { success: false, error: 'No TiledMap component' };
             const layers: any[] = [];
-            // TiledMap 的 layer 信息在运行时通过 tm.getLayerNames() 获取
+            // Layer names are available at runtime via tm.getLayerNames()
             const names = tm.getLayerNames ? tm.getLayerNames() : [];
             return { success: true, data: { layerNames: names, layerCount: names.length } };
         } catch (err: any) {
@@ -586,13 +586,13 @@ export const methods: Record<string, (...args: any[]) => any> = {
         }
     },
 
-    // ── 场景视图控制 (scene_view 工具通过 execute-scene-script 调用) ──
+    // ── Scene view controls (called by scene_view tool via execute-scene-script) ──
 
     setGizmoTool(tool: string) {
         try {
             const { director } = require('cc');
-            // 场景脚本运行在引擎进程中，无法直接控制编辑器 Gizmo
-            // 返回提示，实际 Gizmo 控制需通过编辑器进程
+            // Scene scripts run inside the engine process and cannot control editor Gizmos.
+            // Return a hint; actual Gizmo control needs the editor process API.
             return { success: true, message: `Gizmo tool '${tool}' requested. Note: Gizmo control requires editor process API.` };
         } catch (err: any) {
             return { success: false, error: err.message };
@@ -645,7 +645,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
             const scene = director.getScene();
             if (!scene) return { success: false, error: 'No active scene' };
 
-            // 查找场景中的 Camera 节点并操作
+            // Find Camera nodes in the scene
             const cameras: any[] = [];
             const findCameras = (node: any) => {
                 const cam = node.getComponent('cc.Camera');
@@ -684,7 +684,7 @@ export const methods: Record<string, (...args: any[]) => any> = {
     },
 
     createPrefabTemplate(templateType: string, parentUuid?: string) {
-        // 模板类型通过编辑器 API 创建标准 UI 节点结构
+        // Template types are created via the editor create-node API
         return { success: true, message: `Template creation for '${templateType}' should be done via create-node API` };
     },
 };

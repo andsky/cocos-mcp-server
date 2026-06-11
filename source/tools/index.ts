@@ -6,7 +6,6 @@
 
 import { ToolExecutor } from '../types';
 
-// 单次 import + re-export，添加新工具只需在 TOOLS 里加一行
 export { UnifiedToolBase } from './unified-tool-base';
 
 import { SceneManager } from './scene-management';
@@ -59,6 +58,12 @@ import { PrefabTemplate } from './prefab-template';
 import { PanelManage } from './panel-manage';
 import { ExtensionManage } from './extension-manage';
 import { SceneAnalysis } from './scene-analysis';
+import { PreviewManage } from './preview-manage';
+import { EngineManage } from './engine-manage';
+import { ClipboardManage } from './clipboard-manage';
+import { DialogManage } from './dialog-manage';
+import { NetworkManage } from './network-manage';
+import { EditorUtils } from './editor-utils';
 
 export {
     SceneManager, NodeLifecycle, NodeQuery, NodeTransform,
@@ -75,11 +80,13 @@ export {
     AtlasManage, TextureManage, FontManage, BundleManage,
     PrefabEdit, PrefabTemplate,
     PanelManage, ExtensionManage, SceneAnalysis,
+    PreviewManage, EngineManage, ClipboardManage, DialogManage,
+    NetworkManage, EditorUtils,
 };
 
 /**
- * 工具类注册表 - 单一数据源
- * 添加新工具只需在 TOOLS 数组加一行 + 顶部加 import
+ * Tool registry — single source of truth.
+ * Add a new tool: import above, then append one row here.
  */
 const TOOL_CLASSES: [string, any, string][] = [
     // [tool_name, ToolClass, category]
@@ -133,6 +140,12 @@ const TOOL_CLASSES: [string, any, string][] = [
     ['panel_manage', PanelManage, 'editor'],
     ['extension_manage', ExtensionManage, 'editor'],
     ['scene_analysis', SceneAnalysis, 'editor'],
+    ['preview_manage', PreviewManage, 'core'],
+    ['engine_manage', EngineManage, 'core'],
+    ['clipboard_manage', ClipboardManage, 'editor'],
+    ['dialog_manage', DialogManage, 'editor'],
+    ['network_manage', NetworkManage, 'editor'],
+    ['editor_utils', EditorUtils, 'editor'],
 ];
 
 export function getUnifiedTools(): Record<string, ToolExecutor> {
@@ -147,9 +160,7 @@ export function getUnifiedTools(): Record<string, ToolExecutor> {
 
 export const UNIFIED_TOOLS_COUNT = TOOL_CLASSES.length;
 
-/**
- * 工具分类（从注册表自动生成）
- */
+/** Tool categories — auto-generated from the registry. */
 export const TOOL_CATEGORIES = {
     core: TOOL_CLASSES.filter(([, , c]) => c === 'core').map(([n]) => n),
     editor: TOOL_CLASSES.filter(([, , c]) => c === 'editor').map(([n]) => n),

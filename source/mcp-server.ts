@@ -31,7 +31,7 @@ export class MCPServer {
     private tools: Record<string, any> = {};
     private toolDefs: ToolDefinition[] = [];
     private actionCount = 0;
-    // SSE 传输：每个 SSE 连接分配一个 session，通过 GET /sse 推送响应
+    /** SSE transport: one ServerResponse per session, pushed via GET /sse */
     private sseSessions: Map<string, http.ServerResponse> = new Map();
     private sseSessionCounter = 0;
 
@@ -139,13 +139,11 @@ export class MCPServer {
 
         const route = `${req.method} ${url.pathname}`;
 
-        // ── SSE 传输 ──
-        // GET /sse → 客户端建立 SSE 连接，服务端推送 endpoint 事件
+        // ── SSE transport ──
         if (route === 'GET /sse') return this.handleSSEConnect(req, res);
-        // POST /message → 客户端发送 JSON-RPC 消息，通过 SSE 推送响应
         if (route === 'POST /message') return await this.handleSSEMessage(req, res);
 
-        // ── 标准 HTTP 传输 ──
+        // ── Standard HTTP transport ──
         res.setHeader('Content-Type', 'application/json');
         if (route === 'POST /mcp') return await this.handleMCP(req, res);
         if (route === 'GET /health') return this.handleHealth(res);
@@ -155,49 +153,49 @@ export class MCPServer {
     }
 
 
-    // ── SSE 传输实现 ──
+    // ── SSE transport ──
 
-    /**
-     * GET /sse — 建立 SSE 长连接
-     * 服务端发送 `endpoint` 事件，告知客户端 POST 消息的 URL
-     */
+    /** GET /sse — establish SSE long-poll; server pushes an 'endpoint' event. */
     private handleSSEConnect(req: http.IncomingMessage, res: http.ServerResponse): void {
+        const maxConn = this.config.maxConnections || 10;
+        if (this.sseSessions.size >= maxConn) {
+            res.writeHead(503, { 'Content-Type': 'text/plain' });
+            res.end(`Max SSE connections (${maxConn}) reached`);
+            return;
+        }
+
         const sessionId = `${++this.sseSessionCounter}`;
 
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': (this.config?.allowedOrigins || ['*']).includes('*') ? '*' : '',
         });
 
-        // 存储这个 SSE 连接
+        // Store this SSE connection
         this.sseSessions.set(sessionId, res);
 
-        // 发送 endpoint 事件，告诉客户端往哪 POST 消息
+        // Send endpoint event so the client knows where to POST messages
         const endpointUrl = `http://127.0.0.1:${this.config.port}/message?sessionId=${sessionId}`;
         this.sseSend(res, 'endpoint', endpointUrl);
 
-        // 客户端断开时清理
-        req.on('close', () => {
-            this.sseSessions.delete(sessionId);
-        });
+        req.on('close', () => { this.sseSessions.delete(sessionId); });
     }
 
     /**
-     * POST /message?sessionId=xxx — SSE 客户端发送 JSON-RPC 消息
-     * 处理消息后通过对应的 SSE 连接推送响应
+     * POST /message?sessionId=xxx — receive JSON-RPC from SSE client.
+     * Responds via the matching SSE session.
      */
     private async handleSSEMessage(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
         const url = new URL(req.url || '/', `http://127.0.0.1:${this.config.port}`);
         const sessionId = url.searchParams.get('sessionId') || '';
 
-        // 先给 POST 一个 202 Accepted
+        // Acknowledge the POST immediately
         res.writeHead(202, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'accepted' }));
 
-        // 读 body
-        const body = await this.readBodyRaw(req);
+        // Parse body silently — SSE mode has no POST response channel for errors
+        const body = await this.readBody(req);
         if (!body) return;
 
         let msg: any;
@@ -214,38 +212,17 @@ export class MCPServer {
         }
     }
 
-    /**
-     * 通过 SSE 推送 JSON-RPC 响应到指定 session
-     */
+    /** Push a JSON-RPC response to the SSE session identified by sessionId. */
     private ssePushToSession(sessionId: string, data: any): void {
         const sseRes = this.sseSessions.get(sessionId);
         if (!sseRes || sseRes.writableEnded) return;
         this.sseSend(sseRes, 'message', JSON.stringify(data));
     }
 
-    /**
-     * 发送单个 SSE 事件
-     */
+    /** Write a single SSE event frame. */
     private sseSend(res: http.ServerResponse, event: string, data: string): void {
         if (res.writableEnded) return;
         res.write(`event: ${event}\ndata: ${data}\n\n`);
-    }
-
-    /**
-     * 读取请求体（不依赖 ServerResponse，用于 SSE 模式）
-     */
-    private readBodyRaw(req: http.IncomingMessage): Promise<string | null> {
-        return new Promise(resolve => {
-            let buf = '';
-            let size = 0;
-            req.on('data', (chunk: Buffer) => {
-                size += chunk.length;
-                if (size > MAX_BODY) { req.destroy(); resolve(null); return; }
-                buf += chunk.toString();
-            });
-            req.on('end', () => resolve(buf));
-            req.on('error', () => resolve(null));
-        });
     }
 
 
@@ -269,8 +246,10 @@ export class MCPServer {
     }
 
     private async handleMCP(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-        const body = await this.readBody(req, res);
-        if (body === null) return; // error already sent
+        const body = await this.readBody(req);
+        if (body === null) {
+            return this.sendJson(res, 413, jsonrpcError(null, MCP.ERR_PARSE, `Body exceeds ${MAX_BODY >> 20} MiB or read error`));
+        }
 
         let msg: any;
         try { msg = JSON.parse(body); } catch (e: any) {
@@ -286,8 +265,10 @@ export class MCPServer {
     }
 
     private async handleDirectCall(req: http.IncomingMessage, res: http.ServerResponse, pathname: string): Promise<void> {
-        const body = await this.readBody(req, res);
-        if (body === null) return;
+        const body = await this.readBody(req);
+        if (body === null) {
+            return this.sendJson(res, 413, { success: false, error: `Body exceeds ${MAX_BODY >> 20} MiB or read error` });
+        }
 
         const toolName = pathname.replace('/api/', '').replace(/\//g, '_');
         let params: any = {};
@@ -337,16 +318,15 @@ export class MCPServer {
 
     /**
      * Stream the request body with a size cap.
-     * Returns null if an error was already sent to the client.
+     * Returns null on error or oversize.
      */
-    private readBody(req: http.IncomingMessage, res: http.ServerResponse): Promise<string | null> {
+    private readBody(req: http.IncomingMessage): Promise<string | null> {
         return new Promise(resolve => {
             let buf = '';
             let size = 0;
             req.on('data', (chunk: Buffer) => {
                 size += chunk.length;
                 if (size > MAX_BODY) {
-                    this.sendJson(res, 413, jsonrpcError(null, MCP.ERR_PARSE, `Body exceeds ${MAX_BODY >> 20} MiB`));
                     req.destroy();
                     resolve(null);
                     return;
@@ -354,7 +334,7 @@ export class MCPServer {
                 buf += chunk.toString();
             });
             req.on('end', () => resolve(buf));
-            req.on('error', () => { this.sendJson(res, 400, jsonrpcError(null, MCP.ERR_PARSE, 'Read error')); resolve(null); });
+            req.on('error', () => resolve(null));
         });
     }
 }
