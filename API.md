@@ -2,7 +2,7 @@
 
 ## 概述
 
-50 个统一工具 + action 参数架构。每个工具采用 **"类别_功能域 + action参数"** 模式，通过单一 `action` 字段切换操作，覆盖场景、节点、组件、预制体、资源、物理、渲染、音频、动画、UI、地形、材质、着色器、扩展、面板、调试等全部编辑器操作。
+54 个统一工具 + action 参数架构。每个工具采用 **"类别_功能域 + action参数"** 模式，通过单一 `action` 字段切换操作，覆盖场景、节点、组件、预制体、资源、物理、渲染、音频、动画、UI、地形、材质、着色器、扩展、面板、调试、预览、引擎、剪贴板、对话框、网络、工具集等全部编辑器操作。
 
 ## 传输协议
 
@@ -19,14 +19,14 @@
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
-| **Core** | 13 | 场景、节点、组件、预制体、资源、项目、构建 |
-| **Editor** | 9 | 偏好设置、广播、场景视图、服务器、调试、选区、面板、扩展、场景分析 |
-| **Feature** | 28 | 动画、UI、脚本、相机、灯光、物理、音频、粒子、材质、着色器、渲染纹理、地形、TiledMap、图集、纹理、字体、资源包、Spine、DragonBones、Tween、图形绘制 |
-| **总计** | **50** / **345 actions** | |
+| **Core** | 15 | 场景、节点、组件、预制体、资源、项目、构建、预览、引擎 |
+| **Editor** | 14 | 偏好设置、广播、场景视图、服务器、调试、选区、面板、扩展、场景分析、剪贴板、对话框、网络、工具集 |
+| **Feature** | 27 | 动画、UI、脚本、相机、灯光、物理、音频、粒子、材质、着色器、渲染纹理、地形、TiledMap、图集、纹理、字体、资源包、Spine、DragonBones、Tween、图形绘制 |
+| **总计** | **56** / **372 actions** | |
 
 ---
 
-## Core 工具 (13)
+## Core 工具 (15)
 
 ### 1. scene_management — 场景管理
 **Actions**: `get`, `list`, `open`, `save`, `create`, `close`, `hierarchy`, `undo`, `redo`
@@ -180,11 +180,30 @@
 { "action": "stop" }
 ```
 
+### 14. preview_manage — 预览管理
+**Actions**: `open`, `start`, `stop`, `status`, `reload`
+
+```json
+{ "action": "open" }
+{ "action": "start" }
+{ "action": "stop" }
+{ "action": "status" }
+{ "action": "reload" }
+```
+
+### 15. engine_manage — 引擎管理
+**Actions**: `compile_scripts`, `compile_shaders`
+
+```json
+{ "action": "compile_scripts" }
+{ "action": "compile_shaders" }
+```
+
 ---
 
-## Editor 工具 (9)
+## Editor 工具 (14)
 
-### 14. selection_manage — 选区管理
+### 16. selection_manage — 选区管理
 **Actions**: `select`, `unselect`, `get`, `last`, `type`, `clear`, `hover`, `focus`
 
 ```json
@@ -198,7 +217,7 @@
 { "action": "focus", "uuid": "uuid" }
 ```
 
-### 15. preferences_manage — 偏好设置
+### 17. preferences_manage — 偏好设置
 **Actions**: `get`, `set`, `reset`, `export`, `import`, `open`, `list`
 
 ```json
@@ -211,7 +230,7 @@
 { "action": "list" }
 ```
 
-### 16. broadcast_message — 广播消息
+### 18. broadcast_message — 广播消息
 **Actions**: `listen`, `stop`, `send`, `log`, `clear`, `listeners`, `events`
 
 ```json
@@ -224,7 +243,7 @@
 { "action": "events" }
 ```
 
-### 17. scene_view — 场景视图
+### 19. scene_view — 场景视图
 **Actions**: `focus`, `align`, `gizmo`, `grid`, `mode`, `camera`, `reset`, `status`
 
 ```json
@@ -238,7 +257,7 @@
 { "action": "status" }
 ```
 
-### 18. server_info — 服务器信息
+### 20. server_info — 服务器信息
 **Actions**: `status`, `connectivity`, `network`, `port`, `ip`, `restart`, `quit`
 
 ```json
@@ -251,7 +270,7 @@
 { "action": "quit" }
 ```
 
-### 19. debug_console — 调试控制台
+### 21. debug_console — 调试控制台
 **Actions**: `get`, `clear`, `execute`
 
 ```json
@@ -260,7 +279,7 @@
 { "action": "execute", "script": "console.log('Hello');" }
 ```
 
-### 20. panel_manage — 面板管理
+### 22. panel_manage — 面板管理
 **Actions**: `list`, `open`, `close`, `focus`, `get-active`
 
 ```json
@@ -271,7 +290,7 @@
 { "action": "get-active" }
 ```
 
-### 21. extension_manage — 扩展管理
+### 23. extension_manage — 扩展管理
 **Actions**: `list`, `info`, `enable`, `disable`, `reload`, `install`, `uninstall`
 
 ```json
@@ -284,7 +303,7 @@
 { "action": "uninstall", "name": "my-extension" }
 ```
 
-### 22. scene_analysis — 场景分析
+### 24. scene_analysis — 场景分析
 **Actions**: `statistics`, `node-count`, `component-count`, `draw-call-info`, `find-heavy`, `find-duplicates`, `optimize`, `texture-memory`
 
 ```json
@@ -298,11 +317,60 @@
 { "action": "texture-memory", "folder": "db://assets" }
 ```
 
+### 25. clipboard_manage — 剪贴板
+**Actions**: `read`, `write`, `has`, `clear`
+
+```json
+{ "action": "read", "type": "text" }
+{ "action": "write", "type": "text", "value": "db://assets/prefabs/Player.prefab" }
+{ "action": "has", "type": "text" }
+{ "action": "clear" }
+```
+
+### 26. dialog_manage — 对话框
+**Actions**: `info`, `warn`, `error`, `save`, `select`
+
+```json
+{ "action": "info", "message": "Operation completed", "title": "Info" }
+{ "action": "warn", "message": "This will delete the node. Continue?", "buttons": ["OK", "Cancel"] }
+{ "action": "error", "message": "Failed to load scene", "detail": "File not found" }
+{ "action": "save", "title": "Save Prefab", "filters": [{"name": "Prefab", "extensions": ["prefab"]}] }
+{ "action": "select", "type": "file", "multi": true, "filters": [{"name": "Images", "extensions": ["png","jpg"]}] }
+```
+
+### 27. network_manage — 网络工具
+**Actions**: `get`, `post`, `check_port`, `ip_list`, `test_connect`, `test_host`
+
+```json
+{ "action": "get", "url": "https://example.com/api" }
+{ "action": "post", "url": "https://example.com/api", "data": {"key": "value"} }
+{ "action": "check_port", "port": 3000 }
+{ "action": "ip_list" }
+{ "action": "test_connect" }
+{ "action": "test_host", "host": "192.168.1.100" }
+```
+
+### 28. editor_utils — 编辑器工具集
+**Actions**: `file_copy`, `file_name`, `unzip`, `uuid_generate`, `uuid_compress`, `uuid_decompress`, `uuid_check`, `path_join`, `path_parse`, `doc_url`
+
+```json
+{ "action": "uuid_generate" }
+{ "action": "uuid_compress", "uuid": "15aacf58-f464-4a95-83a9-77f34d08046a" }
+{ "action": "uuid_decompress", "uuid": "15aaERuyLMM91E7lVVVVVV" }
+{ "action": "uuid_check", "uuid": "15aacf58-f464-4a95-83a9-77f34d08046a" }
+{ "action": "path_join", "paths": ["db://assets", "prefabs", "Player.prefab"] }
+{ "action": "path_parse", "path": "db://assets/prefabs/Player.prefab" }
+{ "action": "file_copy", "source": "/tmp/a.json", "target": "/tmp/b.json" }
+{ "action": "file_name", "source": "/tmp/export" }
+{ "action": "unzip", "source": "/tmp/pkg.zip", "target": "/tmp/out", "peel": true }
+{ "action": "doc_url", "url": "editor/extension/readme.html", "docType": "manual" }
+```
+
 ---
 
-## Feature 工具 (28)
+## Feature 工具 (27)
 
-### 23. camera_manage — 相机管理
+### 29. camera_manage — 相机管理
 **Actions**: `add`, `remove`, `get`, `set-projection`, `set-fov`, `set-ortho-size`, `set-near-far`, `set-clear`, `set-priority`, `set-target-texture`
 
 ```json
@@ -318,7 +386,7 @@
 { "action": "set-target-texture", "uuid": "uuid", "renderTextureUuid": "rt-uuid" }
 ```
 
-### 24. light_manage — 灯光管理
+### 30. light_manage — 灯光管理
 **Actions**: `add`, `remove`, `get`, `set-color`, `set-intensity`, `set-range`, `set-spot-angle`, `set-shadow`, `set-type`
 
 ```json
@@ -332,7 +400,7 @@
 { "action": "set-shadow", "uuid": "uuid", "enabled": true }
 ```
 
-### 25. material_manage — 材质管理
+### 31. material_manage — 材质管理
 **Actions**: `list`, `info`, `create`, `delete`, `set-property`, `set-effect`, `copy`, `get-properties`
 
 ```json
@@ -344,7 +412,7 @@
 { "action": "copy", "source": "db://assets/mat/A.mtl", "target": "db://assets/mat/B.mtl" }
 ```
 
-### 26. particle_manage — 粒子系统
+### 32. particle_manage — 粒子系统
 **Actions**: `add`, `remove`, `get`, `set-rate`, `set-duration`, `set-life`, `set-speed`, `set-color`, `set-size`, `set-renderer`, `set-texture`
 
 ```json
@@ -354,7 +422,7 @@
 { "action": "set-texture", "uuid": "uuid", "spriteFramePath": "db://assets/textures/particle.png" }
 ```
 
-### 27. render_texture — 渲染纹理
+### 33. render_texture — 渲染纹理
 **Actions**: `list`, `info`, `create`, `delete`, `set-size`
 
 ```json
@@ -363,7 +431,7 @@
 { "action": "set-size", "url": "db://assets/rt/CameraRT.rt", "width": 512, "height": 512 }
 ```
 
-### 28. shader_manage — 着色器管理
+### 34. shader_manage — 着色器管理
 **Actions**: `list`, `info`, `create`, `delete`, `open`, `save`, `compile`
 
 ```json
@@ -374,7 +442,7 @@
 { "action": "compile", "url": "db://assets/effects/MyShader.effect" }
 ```
 
-### 29. physics3d_manage — 3D 物理
+### 35. physics3d_manage — 3D 物理
 **Actions**: `add-body`, `add-collider`, `remove`, `get-body`, `get-collider`, `set-body`, `set-collider`, `set-material`, `set-constraint`
 
 ```json
@@ -384,7 +452,7 @@
 { "action": "set-collider", "uuid": "uuid", "colliderType": "box", "size": {"x":1,"y":1,"z":1} }
 ```
 
-### 30. physics2d_manage — 2D 物理
+### 36. physics2d_manage — 2D 物理
 **Actions**: `add-body`, `add-collider`, `remove`, `get-body`, `get-collider`, `set-body`, `set-collider`, `set-joint`
 
 ```json
@@ -394,7 +462,7 @@
 { "action": "set-collider", "uuid": "uuid", "colliderType": "circle", "radius": 25 }
 ```
 
-### 31. audio_manage — 音频管理
+### 37. audio_manage — 音频管理
 **Actions**: `add`, `remove`, `get`, `set-clip`, `set-volume`, `set-loop`, `play`, `pause`, `stop`, `list-clips`
 
 ```json
@@ -407,7 +475,7 @@
 { "action": "list-clips" }
 ```
 
-### 32. tween_manage — Tween 动画
+### 38. tween_manage — Tween 动画
 **Actions**: `create`, `to`, `by`, `stop`, `stop-all`, `sequence`, `repeat`
 
 ```json
@@ -417,7 +485,7 @@
 { "action": "stop-all" }
 ```
 
-### 33. spine_manage — Spine 动画
+### 39. spine_manage — Spine 动画
 **Actions**: `add`, `remove`, `get`, `set-data`, `set-animation`, `set-skin`, `set-mix`, `pause`, `get-info`
 
 ```json
@@ -428,7 +496,7 @@
 { "action": "get-info", "uuid": "uuid" }
 ```
 
-### 34. dragonbones_manage — DragonBones 动画
+### 40. dragonbones_manage — DragonBones 动画
 **Actions**: `add`, `remove`, `get`, `set-data`, `set-animation`, `set-armature`, `get-info`
 
 ```json
@@ -438,7 +506,7 @@
 { "action": "get-info", "uuid": "uuid" }
 ```
 
-### 35. ui_scrollview — ScrollView
+### 41. ui_scrollview — ScrollView
 **Actions**: `add`, `remove`, `get`, `set-direction`, `set-bounce`, `set-indicators`, `set-content`, `scroll-to`
 
 ```json
@@ -448,7 +516,7 @@
 { "action": "scroll-to", "uuid": "uuid", "position": {"x":0,"y":100}, "animated": true }
 ```
 
-### 36. ui_pageview — PageView
+### 42. ui_pageview — PageView
 **Actions**: `add`, `remove`, `get`, `set-direction`, `set-size`, `set-indicator`, `set-turn-effect`, `set-current-page`
 
 ```json
@@ -457,7 +525,7 @@
 { "action": "set-current-page", "uuid": "uuid", "pageIndex": 2 }
 ```
 
-### 37. ui_richtext — RichText
+### 43. ui_richtext — RichText
 **Actions**: `add`, `remove`, `get`, `set-text`, `set-font`, `set-max-width`, `set-image-atlas`
 
 ```json
@@ -466,7 +534,7 @@
 { "action": "set-font", "uuid": "uuid", "fontSize": 24, "lineHeight": 30 }
 ```
 
-### 38. ui_mask — Mask
+### 44. ui_mask — Mask
 **Actions**: `add`, `remove`, `get`, `set-type`, `set-sprite-frame`, `set-threshold`, `set-inverted`, `set-ellipse-segments`
 
 ```json
@@ -476,7 +544,7 @@
 { "action": "set-inverted", "uuid": "uuid", "inverted": true }
 ```
 
-### 39. ui_safearea — SafeArea
+### 45. ui_safearea — SafeArea
 **Actions**: `add`, `remove`, `get`
 
 ```json
@@ -485,7 +553,7 @@
 { "action": "get", "uuid": "uuid" }
 ```
 
-### 40. ui_canvas — Canvas
+### 46. ui_canvas — Canvas
 **Actions**: `add`, `remove`, `get`, `set-design-size`, `set-fit`, `set-camera`
 
 ```json
@@ -494,7 +562,7 @@
 { "action": "set-fit", "uuid": "uuid", "fitWidth": false, "fitHeight": true }
 ```
 
-### 41. ui_component — UI 组件（基础）
+### 47. ui_component — UI 组件（基础）
 **Actions**: `label`, `sprite`, `button`, `layout`, `widget`, `progress`, `editbox`, `slider`, `toggle`
 
 ```json
@@ -509,7 +577,7 @@
 { "action": "toggle", "uuid": "uuid", "isChecked": true }
 ```
 
-### 42. animation_manage — 动画管理
+### 48. animation_manage — 动画管理
 **Actions**: `clip`, `component`, `state`, `track`, `play`, `pause`, `stop`, `record`
 
 ```json
@@ -521,7 +589,7 @@
 { "action": "record", "recordAction": "start", "uuid": "uuid" }
 ```
 
-### 43. script_manage — 脚本管理
+### 49. script_manage — 脚本管理
 **Actions**: `attach`, `create`, `compile`, `query`, `methods`, `execute`, `properties`
 
 ```json
@@ -534,7 +602,7 @@
 { "action": "properties", "uuid": "uuid", "className": "Player" }
 ```
 
-### 44. graphics_manage — 图形绘制
+### 50. graphics_manage — 图形绘制
 **Actions**: `add`, `remove`, `get`, `set-colors`, `draw`, `clear`
 
 ```json
@@ -544,7 +612,7 @@
 { "action": "clear", "uuid": "uuid" }
 ```
 
-### 45. terrain_manage — 地形系统
+### 51. terrain_manage — 地形系统
 **Actions**: `add`, `remove`, `get`, `set-size`, `set-height`, `set-layer`, `set-lighting`
 
 ```json
@@ -553,7 +621,7 @@
 { "action": "set-layer", "uuid": "uuid", "layerIndex": 0, "texturePath": "db://assets/terrain/grass.png" }
 ```
 
-### 46. tiledmap_manage — TiledMap
+### 52. tiledmap_manage — TiledMap
 **Actions**: `add`, `remove`, `get`, `set-tmx`, `set-culling`, `get-layers`, `get-properties`
 
 ```json
@@ -563,7 +631,7 @@
 { "action": "get-properties", "uuid": "uuid" }
 ```
 
-### 47. atlas_manage — 图集管理
+### 53. atlas_manage — 图集管理
 **Actions**: `list`, `info`, `create`, `delete`, `pack`, `get-sprites`, `set-settings`
 
 ```json
@@ -574,7 +642,7 @@
 { "action": "set-settings", "url": "db://assets/atlas/UI.pac", "maxWidth": 2048, "maxHeight": 2048, "padding": 2 }
 ```
 
-### 48. texture_manage — 纹理管理
+### 54. texture_manage — 纹理管理
 **Actions**: `list`, `info`, `set-type`, `set-wrap`, `set-filter`, `set-compress`, `batch-compress`
 
 ```json
@@ -584,7 +652,7 @@
 { "action": "batch-compress", "folder": "db://assets/textures", "platform": "android" }
 ```
 
-### 49. font_manage — 字体管理
+### 55. font_manage — 字体管理
 **Actions**: `list`, `info`, `import`, `delete`, `set-font`, `set-label-atlas`
 
 ```json
@@ -593,7 +661,7 @@
 { "action": "set-font", "uuid": "uuid", "fontPath": "db://assets/fonts/Arial.ttf" }
 ```
 
-### 50. bundle_manage — 资源包管理
+### 56. bundle_manage — 资源包管理
 **Actions**: `list`, `info`, `create`, `remove`, `set-priority`, `set-compression`, `set-platforms`, `get-assets`
 
 ```json
@@ -610,9 +678,9 @@
 
 - **版本**: 0.1.0
 - **架构**: Unified Tool + Action
-- **工具数量**: 50 个核心工具
-- **Action 总数**: 345 个操作
-- **场景脚本方法**: 31 个
+- **工具数量**: 56 个核心工具
+- **Action 总数**: 372 个操作
+- **场景脚本方法**: 38 个
 - **兼容性**: Cocos Creator 3.8.6+
 - **传输协议**: HTTP JSON-RPC + SSE
 - **协议**: Model Context Protocol (MCP)

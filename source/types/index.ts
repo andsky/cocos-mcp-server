@@ -40,6 +40,8 @@ export interface ToolResponse {
     warning?: string;
     verificationData?: any;
     updatedProperties?: string[];
+    /** Internal debug context — tool name, channel, method on failure */
+    _debug?: { tool: string; channel: string; method: string };
 }
 
 export interface ToolExecutor {

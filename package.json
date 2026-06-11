@@ -73,6 +73,33 @@
                 "path": "i18n:menu.extension/Cocos MCP Server",
                 "label": "Open Panel",
                 "message": "open-panel"
+            },
+            {
+                "path": "i18n:menu.extension/Cocos MCP Server",
+                "label": "Start Server",
+                "message": "start-server"
+            },
+            {
+                "path": "i18n:menu.extension/Cocos MCP Server",
+                "label": "Stop Server",
+                "message": "stop-server"
+            }
+        ],
+        "shortcuts": [
+            {
+                "message": "open-panel",
+                "label": "Open MCP Panel",
+                "accelerator": "CmdOrCtrl+Shift+M"
+            },
+            {
+                "message": "start-server",
+                "label": "Start MCP Server",
+                "accelerator": "CmdOrCtrl+Shift+Alt+S"
+            },
+            {
+                "message": "stop-server",
+                "label": "Stop MCP Server",
+                "accelerator": "CmdOrCtrl+Shift+Alt+X"
             }
         ],
         "messages": {
