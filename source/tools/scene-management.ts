@@ -66,7 +66,7 @@ export class SceneManager extends UnifiedToolBase {
     }
 
     private async getSceneList(): Promise<ToolResponse> {
-        const result = await this.exec('asset-db', 'query-assets', { type: 'scene' });
+        const result = await this.exec('asset-db', 'query-assets', { ccType: 'scene' });
         if (!result.success) return result;
         const scenes = (result.data || []).map((a: any) => ({ name: a.name, path: a.path, uuid: a.uuid }));
         return { success: true, data: { total: scenes.length, scenes } };
@@ -75,7 +75,11 @@ export class SceneManager extends UnifiedToolBase {
     private async openScene(args: any): Promise<ToolResponse> {
         const missing = this.requireParams(args, 'scenePath');
         if (missing) return missing;
-        return await this.execMsg(`Scene opened: ${args.scenePath}`, 'scene', 'open-scene', args.scenePath);
+        // 规范化路径：确保 db:// 前缀不重复
+        const scenePath = args.scenePath.startsWith('db://')
+            ? args.scenePath
+            : `db://${args.scenePath.replace(/^\/+/, '')}`;
+        return await this.execMsg(`Scene opened: ${scenePath}`, 'scene', 'open-scene', scenePath);
     }
 
     private async saveScene(): Promise<ToolResponse> {

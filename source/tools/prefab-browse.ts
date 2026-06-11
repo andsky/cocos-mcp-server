@@ -114,7 +114,8 @@ export class PrefabBrowse extends UnifiedToolBase {
         const assetUuid = await this.resolveAssetUuid(args.prefabPath);
         if (!assetUuid) return { success: false, error: `Prefab not found: ${args.prefabPath}` };
 
-        const createOptions: any = { name: args.prefabPath.split('/').pop(), assetUuid };
+        const prefabName = args.prefabPath.split('/').pop()?.replace('.prefab', '') || 'Prefab';
+        const createOptions: any = { name: prefabName, assetUuid };
         if (args.parentUuid) createOptions.parent = args.parentUuid;
 
         const result = await this.exec('scene', 'create-node', createOptions);

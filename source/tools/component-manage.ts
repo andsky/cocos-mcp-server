@@ -56,10 +56,13 @@ export class ComponentManage extends UnifiedToolBase {
     private async addComponent(args: any): Promise<ToolResponse> {
         const missing = this.requireParams(args, 'uuid', 'componentType');
         if (missing) return missing;
+        if (!args.componentType || typeof args.componentType !== 'string' || !args.componentType.trim()) {
+            return { success: false, error: `Invalid componentType: '${args.componentType}'. Must be a non-empty string like 'cc.Sprite', 'cc.Label'` };
+        }
 
         const result = await this.exec('scene', 'create-component', {
             node: args.uuid,
-            type: args.componentType
+            type: args.componentType.trim()
         });
         if (!result.success) return result;
 

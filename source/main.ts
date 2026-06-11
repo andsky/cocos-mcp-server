@@ -52,9 +52,16 @@ export const methods: Record<string, (...args: any[]) => any> = {
 
     async updateSettings(cfg: ServerConfig) {
         await saveConfig(cfg);
-        if (server) server.stop();
-        server = new MCPServer(cfg);
-        await server.start();
+        const old = server;
+        try {
+            server = new MCPServer(cfg);
+            await server.start();
+        } catch (e) {
+            // New server failed — roll back to the old one (or null)
+            console.error('[MCP] updateSettings failed, rolling back:', e);
+            server = old;
+            throw e;
+        }
     },
 
     getToolsList() {

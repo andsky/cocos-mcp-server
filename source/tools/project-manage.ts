@@ -3,9 +3,9 @@
  * 项目管理工具 (project_manage)
  * 统一管理项目的运行、构建、配置等操作
  *
- * 注意: build/run 操作同时存在于 build_system 工具中，
- * build_system 提供更完整的构建控制（buildOptions、preview server 等）。
- * 此处保留作为便捷入口。
+ * 注意: Cocos Creator 3.8 没有 'project' 消息频道。
+ * info/settings 通过 Editor.Profile 或读取项目文件实现。
+ * run 走 preview 频道，build 走 builder 频道。
  */
 
 import { ToolResponse } from '../types';
@@ -13,8 +13,8 @@ import { UnifiedToolBase } from './unified-tool-base';
 
 export class ProjectManage extends UnifiedToolBase {
     name = 'project_manage';
-    description = '项目管理工具。支持操作: run(运行项目), build(构建项目), info(获取项目信息), settings(获取项目设置), refresh(刷新资源)';
-    actions = ['run', 'build', 'info', 'settings', 'refresh'];
+    description = '项目管理工具。支持操作: run(运行项目), build(构建项目), info(获取项目信息), refresh(刷新资源)';
+    actions = ['run', 'build', 'info', 'refresh'];
 
     getUnifiedSchema(): any {
         return {
@@ -27,12 +27,6 @@ export class ProjectManage extends UnifiedToolBase {
                     enum: ['browser', 'simulator', 'preview', 'web-mobile', 'web-desktop', 'ios', 'android', 'windows', 'mac']
                 },
                 debug: { type: 'boolean', description: '是否调试构建 (用于 build)', default: true },
-                category: {
-                    type: 'string',
-                    description: '设置类别 (用于 settings)',
-                    enum: ['general', 'physics', 'render', 'assets'],
-                    default: 'general'
-                },
                 folder: { type: 'string', description: '刷新的文件夹 (用于 refresh)' }
             },
             required: ['action']
@@ -44,7 +38,6 @@ export class ProjectManage extends UnifiedToolBase {
             case 'run': return await this.runProject(args);
             case 'build': return await this.buildProject(args);
             case 'info': return await this.getProjectInfo();
-            case 'settings': return await this.getProjectSettings(args);
             case 'refresh': return await this.refreshAssets(args);
             default: return { success: false, error: `Unknown action: ${action}` };
         }
@@ -52,12 +45,11 @@ export class ProjectManage extends UnifiedToolBase {
 
     private async runProject(args: any): Promise<ToolResponse> {
         const platform = args.platform || 'browser';
-        const result = await this.exec('preview', 'open-preview', { platform });
+        const result = await this.exec('preview', 'open-preview');
         if (!result.success) return result;
         return {
             success: true,
-            message: `Project running on ${platform}`,
-            warning: 'For more preview options (start/stop server), use build_system tool with preview/start/stop actions',
+            message: `Project preview opened`,
             data: { platform }
         };
     }
@@ -75,29 +67,27 @@ export class ProjectManage extends UnifiedToolBase {
         return {
             success: true,
             message: `Build started for ${args.platform}`,
-            warning: 'For advanced build options (buildOptions), use build_system tool with build action',
             data: { platform: args.platform, debug: args.debug ?? true }
         };
     }
 
     private async getProjectInfo(): Promise<ToolResponse> {
-        const result = await this.exec('project', 'query-project-info');
-        if (!result.success) return result;
-        return {
-            success: true,
-            data: {
-                name: result.data?.name || 'Unknown',
-                path: result.data?.path || '',
-                uuid: result.data?.uuid || ''
-            }
-        };
-    }
-
-    private async getProjectSettings(args: any): Promise<ToolResponse> {
-        const category = args.category || 'general';
-        const result = await this.exec('project', 'query-project-settings', category);
-        if (!result.success) return result;
-        return { success: true, data: { category, settings: result.data } };
+        // CC 3.8 没有 project:query-project-info
+        // 通过 Editor.Project API 获取项目信息
+        try {
+            const name = Editor.Project.name || 'Unknown';
+            const path = Editor.Project.path || '';
+            const uuid = Editor.Project.uuid || '';
+            return {
+                success: true,
+                data: { name, path, uuid }
+            };
+        } catch {
+            return {
+                success: false,
+                error: 'Unable to get project info. Editor.Project API may not be available.'
+            };
+        }
     }
 
     private async refreshAssets(args: any): Promise<ToolResponse> {
@@ -106,7 +96,7 @@ export class ProjectManage extends UnifiedToolBase {
             if (!result.success) return result;
             return { success: true, message: `Assets refreshed in ${args.folder}`, data: { folder: args.folder } };
         }
-        const result = await this.exec('asset-db', 'refresh-assets');
+        const result = await this.exec('asset-db', 'refresh-asset', 'db://assets');
         if (!result.success) return result;
         return { success: true, message: 'All assets refreshed' };
     }

@@ -29,6 +29,36 @@ import { AnimationManage } from './animation-manage';
 import { UIComponent } from './ui-component';
 import { ScriptManage } from './script-manage';
 import { SelectionManage } from './selection-manage';
+import { CameraManage } from './camera-manage';
+import { LightManage } from './light-manage';
+import { MaterialManage } from './material-manage';
+import { ParticleManage } from './particle-manage';
+import { RenderTexture } from './render-texture';
+import { ShaderManage } from './shader-manage';
+import { Physics3DManage } from './physics3d-manage';
+import { Physics2DManage } from './physics2d-manage';
+import { AudioManage } from './audio-manage';
+import { TweenManage } from './tween-manage';
+import { SpineManage } from './spine-manage';
+import { DragonBonesManage } from './dragonbones-manage';
+import { UIScrollView } from './ui-scrollview';
+import { UIPageView } from './ui-pageview';
+import { UIRichText } from './ui-richtext';
+import { UIMask } from './ui-mask';
+import { UISafeArea } from './ui-safearea';
+import { UICanvas } from './ui-canvas';
+import { GraphicsManage } from './graphics-manage';
+import { TerrainManage } from './terrain-manage';
+import { TiledMapManage } from './tiledmap-manage';
+import { AtlasManage } from './atlas-manage';
+import { TextureManage } from './texture-manage';
+import { FontManage } from './font-manage';
+import { BundleManage } from './bundle-manage';
+import { PrefabEdit } from './prefab-edit';
+import { PrefabTemplate } from './prefab-template';
+import { PanelManage } from './panel-manage';
+import { ExtensionManage } from './extension-manage';
+import { SceneAnalysis } from './scene-analysis';
 
 export {
     SceneManager, NodeLifecycle, NodeQuery, NodeTransform,
@@ -36,6 +66,15 @@ export {
     AssetManage, AssetAnalyze, ProjectManage, BuildSystem,
     PreferencesManage, BroadcastMessage, SceneView, ServerInfo, DebugConsole,
     AnimationManage, UIComponent, ScriptManage, SelectionManage,
+    CameraManage, LightManage, MaterialManage, ParticleManage,
+    RenderTexture, ShaderManage,
+    Physics3DManage, Physics2DManage, AudioManage, TweenManage,
+    SpineManage, DragonBonesManage,
+    UIScrollView, UIPageView, UIRichText, UIMask, UISafeArea, UICanvas,
+    GraphicsManage, TerrainManage, TiledMapManage,
+    AtlasManage, TextureManage, FontManage, BundleManage,
+    PrefabEdit, PrefabTemplate,
+    PanelManage, ExtensionManage, SceneAnalysis,
 };
 
 /**
@@ -64,6 +103,36 @@ const TOOL_CLASSES: [string, any, string][] = [
     ['ui_component', UIComponent, 'feature'],
     ['script_manage', ScriptManage, 'feature'],
     ['selection_manage', SelectionManage, 'editor'],
+    ['camera_manage', CameraManage, 'feature'],
+    ['light_manage', LightManage, 'feature'],
+    ['material_manage', MaterialManage, 'feature'],
+    ['particle_manage', ParticleManage, 'feature'],
+    ['render_texture', RenderTexture, 'feature'],
+    ['shader_manage', ShaderManage, 'feature'],
+    ['physics3d_manage', Physics3DManage, 'feature'],
+    ['physics2d_manage', Physics2DManage, 'feature'],
+    ['audio_manage', AudioManage, 'feature'],
+    ['tween_manage', TweenManage, 'feature'],
+    ['spine_manage', SpineManage, 'feature'],
+    ['dragonbones_manage', DragonBonesManage, 'feature'],
+    ['ui_scrollview', UIScrollView, 'feature'],
+    ['ui_pageview', UIPageView, 'feature'],
+    ['ui_richtext', UIRichText, 'feature'],
+    ['ui_mask', UIMask, 'feature'],
+    ['ui_safearea', UISafeArea, 'feature'],
+    ['ui_canvas', UICanvas, 'feature'],
+    ['graphics_manage', GraphicsManage, 'feature'],
+    ['terrain_manage', TerrainManage, 'feature'],
+    ['tiledmap_manage', TiledMapManage, 'feature'],
+    ['atlas_manage', AtlasManage, 'feature'],
+    ['texture_manage', TextureManage, 'feature'],
+    ['font_manage', FontManage, 'feature'],
+    ['bundle_manage', BundleManage, 'feature'],
+    ['prefab_edit', PrefabEdit, 'core'],
+    ['prefab_template', PrefabTemplate, 'core'],
+    ['panel_manage', PanelManage, 'editor'],
+    ['extension_manage', ExtensionManage, 'editor'],
+    ['scene_analysis', SceneAnalysis, 'editor'],
 ];
 
 export function getUnifiedTools(): Record<string, ToolExecutor> {

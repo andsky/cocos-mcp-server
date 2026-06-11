@@ -74,9 +74,10 @@ export class ScriptManage extends UnifiedToolBase {
         const fullPath = `${args.savePath}/${args.scriptName}.ts`;
         const content = args.scriptContent || this.generateDefaultScriptContent(args.scriptName);
 
+        // asset-db:create-asset 参数: url (db:// 路径), content (文件内容)
         const result = await this.exec('asset-db', 'create-asset', {
-            source: content,
-            target: fullPath
+            url: fullPath,
+            content: content
         });
         if (!result.success) return result;
 

@@ -3,6 +3,7 @@ import { join } from 'path';
 import { createApp, App, defineComponent, ref, computed, onMounted, watch } from 'vue';
 
 const panelDataMap = new WeakMap<any, App>();
+let statusTimer: ReturnType<typeof setInterval> | null = null;
 
 interface ServerSettings {
     port: number;
@@ -108,7 +109,7 @@ module.exports = Editor.Panel.define({
                     } catch { /* use defaults */ }
 
                     await refreshStatus();
-                    setInterval(refreshStatus, 2000);
+                    statusTimer = setInterval(refreshStatus, 2000);
                 });
 
                 return {
@@ -125,6 +126,7 @@ module.exports = Editor.Panel.define({
     },
     beforeClose() {},
     close() {
+        if (statusTimer) { clearInterval(statusTimer); statusTimer = null; }
         const app = panelDataMap.get(this);
         if (app) app.unmount();
     },

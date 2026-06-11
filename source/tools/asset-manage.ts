@@ -132,7 +132,7 @@ export class AssetManage extends UnifiedToolBase {
 
     private async listAssets(args: any): Promise<ToolResponse> {
         const queryOptions: any = { path: args.folder || 'db://assets' };
-        if (args.type && args.type !== 'all') queryOptions.type = args.type;
+        if (args.type && args.type !== 'all') queryOptions.ccType = args.type;
         const result = await this.exec('asset-db', 'query-assets', queryOptions);
         if (!result.success) return result;
         const assetList = (result.data || []).map((a: any) => ({ name: a.name, path: a.path, uuid: a.uuid, type: a.type }));

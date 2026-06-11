@@ -21,10 +21,6 @@ export class PrefabLifecycle extends UnifiedToolBase {
                     type: 'string',
                     description: '节点UUID (用于 create, update, revert)'
                 },
-                prefabPath: {
-                    type: 'string',
-                    description: '预制体保存路径 (用于 create, duplicate)'
-                },
                 savePath: {
                     type: 'string',
                     description: '保存路径，需包含文件名 (如 db://assets/prefabs/MyPrefab.prefab，用于 create)'

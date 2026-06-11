@@ -28,7 +28,8 @@
         "default": {
             "title": "Cocos MCP Server",
             "type": "dockable",
-            "main": "dist/panels/default",
+            "main": "./dist/panels/default",
+            "icon": "./static/icon.png",
             "size": {
                 "min-width": 400,
                 "min-height": 300,
@@ -38,6 +39,35 @@
         }
     },
     "contributions": {
+        "profile": {
+            "editor": {
+                "port": {
+                    "default": 3000,
+                    "message": "cocos-mcp-server:settings-changed",
+                    "label": "Server Port"
+                },
+                "autoStart": {
+                    "default": false,
+                    "message": "cocos-mcp-server:settings-changed",
+                    "label": "Auto Start"
+                },
+                "enableDebugLog": {
+                    "default": false,
+                    "message": "cocos-mcp-server:settings-changed",
+                    "label": "Enable Debug Log"
+                },
+                "allowedOrigins": {
+                    "default": ["*"],
+                    "message": "cocos-mcp-server:settings-changed",
+                    "label": "Allowed CORS Origins"
+                },
+                "maxConnections": {
+                    "default": 10,
+                    "message": "cocos-mcp-server:settings-changed",
+                    "label": "Max Connections"
+                }
+            }
+        },
         "menu": [
             {
                 "path": "i18n:menu.extension/Cocos MCP Server",
@@ -66,6 +96,10 @@
             },
             "getToolsList": {
                 "methods": ["getToolsList"]
+            },
+            "settings-changed": {
+                "public": true,
+                "description": "Server settings changed notification"
             }
         },
         "scene": {
@@ -80,7 +114,36 @@
                 "cancelAnimationRecord",
                 "executeScript",
                 "queryScriptMethods",
-                "queryScriptProperties"
+                "queryScriptProperties",
+                "createTween",
+                "stopTween",
+                "stopAllTweens",
+                "setSpineAnimation",
+                "getSpineInfo",
+                "setSpineMix",
+                "pauseSpine",
+                "setDragonBonesAnimation",
+                "getDragonBonesInfo",
+                "executeGraphics",
+                "playAudio",
+                "pauseAudio",
+                "stopAudio",
+                "scrollScrollView",
+                "setPageViewIndex",
+                "getSceneStatistics",
+                "createPrefabTemplate",
+                "unlinkPrefab",
+                "createPrefabFromNode",
+                "getTiledMapLayers",
+                "getTiledMapProperties",
+                "setGizmoTool",
+                "setGizmoCoordinate",
+                "setGizmoPivot",
+                "setGridVisible",
+                "queryGridVisible",
+                "setViewMode",
+                "cameraOperation",
+                "querySceneViewStatus"
             ]
         }
     }

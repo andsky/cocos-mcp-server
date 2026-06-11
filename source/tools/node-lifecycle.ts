@@ -142,9 +142,10 @@ export class NodeLifecycle extends UnifiedToolBase {
         if (missing) return missing;
         const result = await this.exec('scene', 'duplicate-node', args.uuid);
         if (!result.success) return result;
+        const newUuid = result.data?.uuid || (Array.isArray(result.data) ? result.data[0] : result.data);
         return {
             success: true,
-            data: { newUuid: result.data?.uuid, includeChildren: args.includeChildren ?? true },
+            data: { uuid: newUuid, sourceUuid: args.uuid, includeChildren: args.includeChildren ?? true },
             message: 'Node duplicated successfully'
         };
     }
@@ -152,11 +153,7 @@ export class NodeLifecycle extends UnifiedToolBase {
     private async renameNode(args: any): Promise<ToolResponse> {
         const missing = this.requireParams(args, 'uuid', 'name');
         if (missing) return missing;
-        const result = await this.exec('scene', 'set-property', {
-            uuid: args.uuid,
-            path: 'name',
-            dump: { value: args.name }
-        });
+        const result = await this.setSceneProperty(args.uuid, 'name', args.name);
         if (!result.success) return result;
         return { success: true, message: `Node renamed to '${args.name}'`, data: { uuid: args.uuid, name: args.name } };
     }
@@ -165,11 +162,7 @@ export class NodeLifecycle extends UnifiedToolBase {
         const missing = this.requireParams(args, 'uuid');
         if (missing) return missing;
         const active = args.active ?? true;
-        const result = await this.exec('scene', 'set-property', {
-            uuid: args.uuid,
-            path: 'active',
-            dump: { value: active }
-        });
+        const result = await this.setSceneProperty(args.uuid, 'active', active);
         if (!result.success) return result;
         return { success: true, message: `Node ${active ? 'activated' : 'deactivated'}`, data: { uuid: args.uuid, active } };
     }

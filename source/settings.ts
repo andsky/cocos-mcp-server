@@ -1,16 +1,16 @@
 /**
  * Configuration persistence for the MCP server extension.
  *
- * Single JSON file under the project's settings/ directory:
- *   - cocos-mcp-server.json  →  ServerConfig (port, CORS, etc.)
+ * Uses the official Cocos Creator Editor.Profile API with
+ * three-tier priority: local > global > default.
  *
+ * Schema is declared in package.json contributions.profile.editor.
  * All I/O is async to avoid blocking the editor main thread.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { ServerConfig } from './types';
 
+const PKG = 'cocos-mcp-server';
 
 export const DEFAULT_CONFIG: ServerConfig = {
     port: 3000,
@@ -20,35 +20,46 @@ export const DEFAULT_CONFIG: ServerConfig = {
     maxConnections: 10,
 };
 
-
-function configPath(): string {
-    return path.join(Editor.Project.path, 'settings', 'cocos-mcp-server.json');
-}
-
-async function ensureDir(filePath: string): Promise<void> {
-    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-}
-
-
-async function readJsonFile<T>(filePath: string, fallback: T): Promise<T> {
+/**
+ * Load config via Editor.Profile — automatically resolves
+ * local → global → default priority.
+ */
+export async function loadConfig(): Promise<ServerConfig> {
     try {
-        const raw = await fs.promises.readFile(filePath, 'utf8');
-        return { ...fallback, ...JSON.parse(raw) };
+        const port = await Editor.Profile.getConfig(PKG, 'port');
+        const autoStart = await Editor.Profile.getConfig(PKG, 'autoStart');
+        const enableDebugLog = await Editor.Profile.getConfig(PKG, 'enableDebugLog');
+        const allowedOrigins = await Editor.Profile.getConfig(PKG, 'allowedOrigins');
+        const maxConnections = await Editor.Profile.getConfig(PKG, 'maxConnections');
+
+        // Merge with defaults so undefined fields (unset tiers) get sane values
+        return {
+            ...DEFAULT_CONFIG,
+            ...(port !== undefined && { port }),
+            ...(autoStart !== undefined && { autoStart }),
+            ...(enableDebugLog !== undefined && { enableDebugLog }),
+            ...(allowedOrigins !== undefined && { allowedOrigins }),
+            ...(maxConnections !== undefined && { maxConnections }),
+        };
     } catch {
-        return fallback;
+        // Profile API unavailable (e.g. running outside editor) — fall back
+        return { ...DEFAULT_CONFIG };
     }
 }
 
-async function writeJsonFile(filePath: string, data: unknown): Promise<void> {
-    await ensureDir(filePath);
-    await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
-}
-
-
-export async function loadConfig(): Promise<ServerConfig> {
-    return readJsonFile<ServerConfig>(configPath(), DEFAULT_CONFIG);
-}
-
+/**
+ * Save config to the local project layer via Editor.Profile.
+ * This triggers the settings-changed broadcast message declared in package.json.
+ */
 export async function saveConfig(cfg: ServerConfig): Promise<void> {
-    await writeJsonFile(configPath(), cfg);
+    try {
+        await Editor.Profile.setConfig(PKG, 'port', cfg.port, 'local');
+        await Editor.Profile.setConfig(PKG, 'autoStart', cfg.autoStart, 'local');
+        await Editor.Profile.setConfig(PKG, 'enableDebugLog', cfg.enableDebugLog, 'local');
+        await Editor.Profile.setConfig(PKG, 'allowedOrigins', cfg.allowedOrigins, 'local');
+        await Editor.Profile.setConfig(PKG, 'maxConnections', cfg.maxConnections, 'local');
+    } catch (err) {
+        console.error('[MCP] saveConfig via Editor.Profile failed:', err);
+        throw err;
+    }
 }

@@ -107,19 +107,29 @@ export abstract class UnifiedToolBase implements ToolExecutor {
 
     /**
      * 根据 propertyType 构造正确的 dump 格式
-     * Cocos Creator 的 set-property API 对 vec2/vec3/color/size 等复合类型需要 __type__ 字段
+     * Cocos Creator 的 set-property API 对复合类型需要 __type__ 字段
+     * 对资源引用类型需要 { __uuid__, __expectedType__ } 格式
      *
-     * 当 propertyType 未显式指定时，自动从 value 的形状推断类型：
-     * - { x, y, z } → cc.Vec3
-     * - { x, y }（无 z）→ cc.Vec2
-     * - { r, g, b } → cc.Color
-     * - { width, height } → cc.Size
+     * 支持的 propertyType:
+     * - 复合类型: vec2, vec3, color, size
+     * - 资源引用: spriteFrame, texture, prefab, audioClip, material, effectAsset,
+     *             font, spSkeletonData, dragonBonesAsset, tiledMapAsset, spriteAtlas, labelAtlas
+     * - 节点/组件引用: node, component
+     * - 简单类型: string, number, boolean (直接传值)
+     *
+     * 未指定 propertyType 时，自动从 value 形状推断复合类型
      */
     protected formatDump(value: any, propertyType?: string): any {
         if (value === undefined || value === null) {
             return { value };
         }
 
+        // 如果 value 已经是带 __uuid__ 的引用对象，直接透传
+        if (typeof value === 'object' && !Array.isArray(value) && value.__uuid__) {
+            return { value };
+        }
+
+        // 复合类型映射
         const TYPE_MAP: Record<string, string> = {
             vec2: 'cc.Vec2',
             vec3: 'cc.Vec3',
@@ -127,11 +137,51 @@ export abstract class UnifiedToolBase implements ToolExecutor {
             size: 'cc.Size',
         };
 
+        // 资源引用类型映射 — value 应为 UUID 字符串
+        const RESOURCE_TYPE_MAP: Record<string, string> = {
+            spriteFrame: 'cc.SpriteFrame',
+            texture: 'cc.Texture2D',
+            prefab: 'cc.Prefab',
+            audioClip: 'cc.AudioClip',
+            material: 'cc.Material',
+            effectAsset: 'cc.EffectAsset',
+            font: 'cc.Font',
+            spSkeletonData: 'sp.SkeletonData',
+            dragonBonesAsset: 'dragonBones.DragonBonesAsset',
+            tiledMapAsset: 'cc.TiledMapAsset',
+            spriteAtlas: 'cc.SpriteAtlas',
+            labelAtlas: 'cc.LabelAtlas',
+            renderTexture: 'cc.RenderTexture',
+            animationClip: 'cc.AnimationClip',
+            mesh: 'cc.Mesh',
+        };
+
         // 显式指定了 propertyType → 直接用
         if (propertyType) {
+            // 复合类型
             const ccType = TYPE_MAP[propertyType];
             if (ccType) {
                 return { value: { __type__: ccType, ...value } };
+            }
+            // 资源引用类型
+            const expectedType = RESOURCE_TYPE_MAP[propertyType];
+            if (expectedType) {
+                const uuid = typeof value === 'string' ? value : value?.uuid || value;
+                const ref: any = { __uuid__: uuid };
+                if (expectedType !== 'cc.Prefab') {
+                    ref.__expectedType__ = expectedType;
+                }
+                return { value: ref };
+            }
+            // 节点引用 / 组件引用
+            if (propertyType === 'node' || propertyType === 'component') {
+                const uuid = typeof value === 'string' ? value : value?.uuid || value;
+                return { value: { __uuid__: uuid } };
+            }
+            // 通用 asset 类型 — 不指定 expectedType
+            if (propertyType === 'asset') {
+                const uuid = typeof value === 'string' ? value : value?.uuid || value;
+                return { value: { __uuid__: uuid } };
             }
             return { value };
         }
@@ -193,11 +243,8 @@ export abstract class UnifiedToolBase implements ToolExecutor {
     }
 
     protected async resolveAssetUuid(assetPath: string): Promise<string | null> {
-        try {
-            const info = await Editor.Message.request('asset-db', 'query-asset-info', assetPath);
-            return info?.uuid || null;
-        } catch {
-            return null;
-        }
+        const result = await this.exec('asset-db', 'query-asset-info', assetPath);
+        if (!result.success) return null;
+        return result.data?.uuid || null;
     }
 }

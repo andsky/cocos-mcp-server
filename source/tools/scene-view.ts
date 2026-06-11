@@ -2,6 +2,10 @@
 /**
  * 场景视图工具 (scene_view)
  * 统一管理场景视图的相机、Gizmo、网格、视图模式等操作
+ *
+ * 注意: Cocos Creator 3.8 的 scene 频道公开消息主要是节点 CRUD 操作。
+ * 视图控制（聚焦、网格、Gizmo、相机）没有公开的 Editor.Message API，
+ * 所以这些操作通过 execute-scene-script 在引擎运行时中执行。
  */
 
 import { ToolResponse } from '../types';
@@ -9,8 +13,8 @@ import { UnifiedToolBase } from './unified-tool-base';
 
 export class SceneView extends UnifiedToolBase {
     name = 'scene_view';
-    description = '场景视图工具。支持操作: focus(聚焦节点), align(对齐视图), gizmo(Gizmo工具), grid(网格设置), mode(视图模式), camera(相机操作), reset(重置), status(查询状态)';
-    actions = ['focus', 'align', 'gizmo', 'grid', 'mode', 'camera', 'reset', 'status'];
+    description = '场景视图工具。支持操作: focus(聚焦节点), gizmo(Gizmo工具), grid(网格设置), mode(视图模式), camera(相机操作), status(查询状态)';
+    actions = ['focus', 'gizmo', 'grid', 'mode', 'camera', 'status'];
 
     getUnifiedSchema(): any {
         return {
@@ -36,47 +40,59 @@ export class SceneView extends UnifiedToolBase {
     async executeAction(action: string, args: any): Promise<ToolResponse> {
         switch (action) {
             case 'focus': return await this.focusCamera(args);
-            case 'align': return await this.alignView();
             case 'gizmo': return await this.setGizmo(args);
             case 'grid': return await this.setGrid(args);
             case 'mode': return await this.setViewMode(args);
             case 'camera': return await this.cameraOperation(args);
-            case 'reset': return await this.resetSceneView();
-            case 'status': return await this.getSceneViewStatus();
+            case 'status': return await this.getSceneViewStatus(args);
             default: return { success: false, error: `Unknown action: ${action}` };
         }
     }
 
     private async focusCamera(args: any): Promise<ToolResponse> {
-        const result = await this.exec('scene', 'focus-nodes', args.uuids || null);
-        if (!result.success) return result;
+        const uuids = args.uuids || [];
+        if (uuids.length === 0) {
+            return { success: false, error: 'At least one node UUID is required (uuids parameter)' };
+        }
+        // CC 3.8 scene 频道没有 focus-nodes 消息，通过 Selection API 选中节点来聚焦
+        for (const uuid of uuids) {
+            Editor.Selection.select('node', uuid);
+        }
         return {
             success: true,
-            message: args.uuids ? `Camera focused on ${args.uuids.length} node(s)` : 'Camera focused on scene',
-            data: { uuids: args.uuids }
+            message: `Focused on ${uuids.length} node(s) via selection`,
+            data: { uuids }
         };
-    }
-
-    private async alignView(): Promise<ToolResponse> {
-        return await this.execMsg('View aligned with camera', 'scene', 'align-camera-with-view');
     }
 
     private async setGizmo(args: any): Promise<ToolResponse> {
         const updates: string[] = [];
 
         if (args.gizmoTool) {
-            const r = await this.exec('scene', 'set-gizmo-tool', args.gizmoTool);
-            if (!r.success) return r;
+            const result = await this.exec('scene', 'execute-scene-script', {
+                name: 'cocos-mcp-server',
+                method: 'setGizmoTool',
+                args: [args.gizmoTool]
+            });
+            if (!result.success) return result;
             updates.push(`tool: ${args.gizmoTool}`);
         }
         if (args.coordinate) {
-            const r = await this.exec('scene', 'set-gizmo-coordinate', args.coordinate);
-            if (!r.success) return r;
+            const result = await this.exec('scene', 'execute-scene-script', {
+                name: 'cocos-mcp-server',
+                method: 'setGizmoCoordinate',
+                args: [args.coordinate]
+            });
+            if (!result.success) return result;
             updates.push(`coordinate: ${args.coordinate}`);
         }
         if (args.pivot) {
-            const r = await this.exec('scene', 'set-gizmo-pivot', args.pivot);
-            if (!r.success) return r;
+            const result = await this.exec('scene', 'execute-scene-script', {
+                name: 'cocos-mcp-server',
+                method: 'setGizmoPivot',
+                args: [args.pivot]
+            });
+            if (!result.success) return result;
             updates.push(`pivot: ${args.pivot}`);
         }
 
@@ -88,68 +104,68 @@ export class SceneView extends UnifiedToolBase {
 
     private async setGrid(args: any): Promise<ToolResponse> {
         if (args.visible !== undefined) {
-            const r = await this.exec('scene', 'set-grid-visible', args.visible);
-            if (!r.success) return r;
+            const result = await this.exec('scene', 'execute-scene-script', {
+                name: 'cocos-mcp-server',
+                method: 'setGridVisible',
+                args: [args.visible]
+            });
+            if (!result.success) return result;
+            return {
+                success: true,
+                message: `Grid ${args.visible ? 'shown' : 'hidden'}`,
+                data: { visible: args.visible }
+            };
         }
-        const result = await this.exec('scene', 'query-grid-visible');
+        const result = await this.exec('scene', 'execute-scene-script', {
+            name: 'cocos-mcp-server',
+            method: 'queryGridVisible',
+            args: []
+        });
         if (!result.success) return result;
         return {
             success: true,
-            message: `Grid ${args.visible !== undefined ? (args.visible ? 'shown' : 'hidden') : 'status queried'}`,
+            message: 'Grid status queried',
             data: { visible: result.data }
         };
     }
 
     private async setViewMode(args: any): Promise<ToolResponse> {
         if (args.is2D !== undefined) {
-            await this.exec('scene', 'set-view-mode', args.is2D ? '2d' : '3d');
+            const result = await this.exec('scene', 'execute-scene-script', {
+                name: 'cocos-mcp-server',
+                method: 'setViewMode',
+                args: [args.is2D ? '2d' : '3d']
+            });
+            if (!result.success) return result;
+            return {
+                success: true,
+                message: `View mode set to ${args.is2D ? '2D' : '3D'}`,
+                data: { is2D: args.is2D }
+            };
         }
-        const result = await this.exec('scene', 'query-view-mode');
-        if (!result.success) return result;
-        return {
-            success: true,
-            message: `View mode ${args.is2D !== undefined ? (args.is2D ? '2D' : '3D') : 'queried'}`,
-            data: { is2D: result.data === '2d', mode: result.data }
-        };
+        return { success: false, error: 'is2D parameter is required' };
     }
 
     private async cameraOperation(args: any): Promise<ToolResponse> {
-        const map: Record<string, string> = {
-            'align-with-view': 'align-camera-with-view',
-            'align-view-with-node': 'align-view-with-node',
-            'reset': 'reset-camera'
-        };
-        const method = map[args.cameraAction];
-        if (!method) return { success: false, error: `Unknown camera action: ${args.cameraAction}` };
+        const action = args.cameraAction;
+        if (!action) return { success: false, error: 'cameraAction is required' };
 
-        const result = await this.exec('scene', method);
+        const result = await this.exec('scene', 'execute-scene-script', {
+            name: 'cocos-mcp-server',
+            method: 'cameraOperation',
+            args: [action]
+        });
         if (!result.success) return result;
-        return { success: true, message: `Camera action '${args.cameraAction}' executed`, data: { cameraAction: args.cameraAction } };
+        return { success: true, message: `Camera action '${action}' executed`, data: { cameraAction: action } };
     }
 
-    private async resetSceneView(): Promise<ToolResponse> {
-        return await this.execMsg('Scene view reset to default', 'scene', 'reset-scene-view');
-    }
-
-    private async getSceneViewStatus(): Promise<ToolResponse> {
-        const [gizmoTool, coordinate, pivot, gridVisible, viewMode] = await Promise.all([
-            this.exec('scene', 'query-gizmo-tool'),
-            this.exec('scene', 'query-gizmo-coordinate'),
-            this.exec('scene', 'query-gizmo-pivot'),
-            this.exec('scene', 'query-grid-visible'),
-            this.exec('scene', 'query-view-mode')
-        ]);
-
-        return {
-            success: true,
-            data: {
-                gizmoTool: gizmoTool.success ? gizmoTool.data : null,
-                coordinate: coordinate.success ? coordinate.data : null,
-                pivot: pivot.success ? pivot.data : null,
-                gridVisible: gridVisible.success ? gridVisible.data : null,
-                viewMode: viewMode.success ? viewMode.data : null,
-                is2D: viewMode.success ? viewMode.data === '2d' : null
-            }
-        };
+    private async getSceneViewStatus(args: any): Promise<ToolResponse> {
+        const result = await this.exec('scene', 'execute-scene-script', {
+            name: 'cocos-mcp-server',
+            method: 'querySceneViewStatus',
+            args: []
+        });
+        if (!result.success) return result;
+        return { success: true, data: result.data };
     }
 }
