@@ -56,11 +56,6 @@
                     "message": "cocos-mcp-server:settings-changed",
                     "label": "Enable Debug Log"
                 },
-                "allowedOrigins": {
-                    "default": ["*"],
-                    "message": "cocos-mcp-server:settings-changed",
-                    "label": "Allowed CORS Origins"
-                },
                 "maxConnections": {
                     "default": 10,
                     "message": "cocos-mcp-server:settings-changed",
@@ -158,19 +153,8 @@
                 "scrollScrollView",
                 "setPageViewIndex",
                 "getSceneStatistics",
-                "createPrefabTemplate",
-                "unlinkPrefab",
-                "createPrefabFromNode",
                 "getTiledMapLayers",
-                "getTiledMapProperties",
-                "setGizmoTool",
-                "setGizmoCoordinate",
-                "setGizmoPivot",
-                "setGridVisible",
-                "queryGridVisible",
-                "setViewMode",
-                "cameraOperation",
-                "querySceneViewStatus"
+                "getTiledMapProperties"
             ]
         }
     }

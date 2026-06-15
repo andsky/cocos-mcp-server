@@ -2,9 +2,10 @@
 /**
  * 调试控制台工具 (debug_console)
  *
- * CC 3.8 没有 'console' 消息频道。console:query-logs / console:clear 不存在。
- * 日志获取无法通过 Editor.Message 实现。
- * 脚本执行通过 execute-scene-script 实现。
+ * 日志：Editor.Logger（命名空间 API，与 Editor.Selection 同类，非消息频道）
+ *   - query(): 查询所有日志
+ *   - clear(): 清空所有日志
+ * 脚本执行：execute-scene-script，在场景进程引擎上下文运行任意 JS。
  */
 
 import { ToolResponse } from '../types';
@@ -12,8 +13,8 @@ import { UnifiedToolBase } from './unified-tool-base';
 
 export class DebugConsole extends UnifiedToolBase {
     name = 'debug_console';
-    description = '调试控制台工具。支持操作: execute(执行脚本)';
-    actions = ['execute'];
+    description = '调试控制台工具。支持操作: query-logs(查询日志), clear-logs(清空日志), execute(执行脚本)';
+    actions = ['query-logs', 'clear-logs', 'execute'];
 
     getUnifiedSchema(): any {
         return {
@@ -28,8 +29,31 @@ export class DebugConsole extends UnifiedToolBase {
 
     async executeAction(action: string, args: any): Promise<ToolResponse> {
         switch (action) {
+            case 'query-logs': return await this.queryLogs();
+            case 'clear-logs': return await this.clearLogs();
             case 'execute': return await this.executeScript(args);
             default: return { success: false, error: `Unknown action: ${action}` };
+        }
+    }
+
+    /** 查询编辑器日志（Editor.Logger.query 返回日志数组或对象，原样透传）。 */
+    private async queryLogs(): Promise<ToolResponse> {
+        try {
+            const logs = await Editor.Logger.query();
+            const count = Array.isArray(logs) ? logs.length : (logs ? Object.keys(logs).length : 0);
+            return { success: true, data: { count, logs } };
+        } catch (err: any) {
+            return { success: false, error: `Failed to query logs: ${err.message || String(err)}` };
+        }
+    }
+
+    /** 清空编辑器日志（Editor.Logger.clear 同步调用）。 */
+    private async clearLogs(): Promise<ToolResponse> {
+        try {
+            Editor.Logger.clear();
+            return { success: true, message: 'Logs cleared' };
+        } catch (err: any) {
+            return { success: false, error: `Failed to clear logs: ${err.message || String(err)}` };
         }
     }
 

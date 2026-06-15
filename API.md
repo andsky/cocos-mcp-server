@@ -2,7 +2,9 @@
 
 ## 概述
 
-54 个统一工具 + action 参数架构。每个工具采用 **"类别_功能域 + action参数"** 模式，通过单一 `action` 字段切换操作，覆盖场景、节点、组件、预制体、资源、物理、渲染、音频、动画、UI、地形、材质、着色器、扩展、面板、调试、预览、引擎、剪贴板、对话框、网络、工具集等全部编辑器操作。
+56 个统一工具 + action 参数架构。每个工具采用 **"类别_功能域 + action参数"** 模式，通过单一 `action` 字段切换操作，覆盖场景、节点、组件、预制体、资源、物理、渲染、音频、动画、UI、地形、材质、着色器、扩展、面板、调试、预览、引擎、剪贴板、对话框、网络、工具集等全部编辑器操作。
+
+> Action 列表以 `source/tools/*.ts` 的 `actions = [...]` 为唯一事实来源；本文档与其保持一致。工具/Action 总数可由 `GET /health` 端点动态获取。
 
 ## 传输协议
 
@@ -20,9 +22,9 @@
 | 类别 | 数量 | 说明 |
 |------|------|------|
 | **Core** | 15 | 场景、节点、组件、预制体、资源、项目、构建、预览、引擎 |
-| **Editor** | 14 | 偏好设置、广播、场景视图、服务器、调试、选区、面板、扩展、场景分析、剪贴板、对话框、网络、工具集 |
-| **Feature** | 27 | 动画、UI、脚本、相机、灯光、物理、音频、粒子、材质、着色器、渲染纹理、地形、TiledMap、图集、纹理、字体、资源包、Spine、DragonBones、Tween、图形绘制 |
-| **总计** | **56** / **372 actions** | |
+| **Editor** | 13 | 偏好设置、广播、场景视图、服务器、调试、选区、面板、扩展、场景分析、剪贴板、对话框、网络、工具集 |
+| **Feature** | 28 | 动画、UI、脚本、相机、灯光、物理、音频、粒子、材质、着色器、渲染纹理、地形、TiledMap、图集、纹理、字体、资源包、Spine、DragonBones、Tween、图形绘制 |
+| **总计** | **56 工具 / 362 actions / 28 场景脚本方法** | |
 
 ---
 
@@ -33,14 +35,9 @@
 
 ```json
 { "action": "get" }
-{ "action": "list" }
 { "action": "open", "scenePath": "db://assets/scenes/Game.scene" }
-{ "action": "save" }
 { "action": "create", "sceneName": "Level2", "savePath": "db://assets/scenes/Level2.scene" }
-{ "action": "close" }
 { "action": "hierarchy", "includeComponents": true }
-{ "action": "undo" }
-{ "action": "redo" }
 ```
 
 ### 2. node_lifecycle — 节点生命周期
@@ -48,10 +45,8 @@
 
 ```json
 { "action": "create", "name": "Player", "parentUuid": "uuid", "nodeType": "2DNode" }
-{ "action": "create", "name": "Enemy", "assetPath": "db://assets/prefabs/Enemy.prefab", "parentUuid": "uuid" }
-{ "action": "delete", "uuid": "node-uuid" }
+{ "action": "create", "name": "Enemy", "assetPath": "db://assets/prefabs/Enemy.prefab", "parentUuid": "uuid", "unlinkPrefab": true }
 { "action": "duplicate", "uuid": "node-uuid" }
-{ "action": "rename", "uuid": "node-uuid", "name": "NewName" }
 { "action": "activate", "uuid": "node-uuid", "active": true }
 ```
 
@@ -80,10 +75,9 @@
 
 ```json
 { "action": "add", "uuid": "uuid", "componentType": "cc.Sprite" }
-{ "action": "remove", "uuid": "uuid", "componentType": "cc.Sprite" }
 { "action": "get", "uuid": "uuid" }
-{ "action": "info", "uuid": "uuid", "componentType": "cc.Sprite" }
 { "action": "set", "uuid": "uuid", "componentType": "cc.Label", "property": "string", "value": "Hello" }
+{ "action": "set", "uuid": "uuid", "componentType": "cc.Sprite", "property": "spriteFrame", "value": "uuid-of-spriteframe", "propertyType": "spriteFrame" }
 ```
 
 ### 6. prefab_lifecycle — 预制体生命周期
@@ -102,20 +96,17 @@
 ```json
 { "action": "list", "folder": "db://assets/prefabs" }
 { "action": "load", "prefabPath": "db://assets/prefabs/Enemy.prefab" }
-{ "action": "info", "prefabPath": "db://assets/prefabs/Enemy.prefab" }
-{ "action": "instantiate", "prefabPath": "db://assets/prefabs/Enemy.prefab", "parentUuid": "uuid", "position": {"x":0,"y":0,"z":0} }
+{ "action": "instantiate", "prefabPath": "db://assets/prefabs/Enemy.prefab", "parentUuid": "uuid" }
 ```
 
 ### 8. prefab_edit — 预制体编辑（高级）
-**Actions**: `create-nested`, `create-variant`, `apply-override`, `revert-override`, `get-override`, `disconnect`, `get-nested`
+**Actions**: `create-nested`, `create-variant`, `apply-override`, `revert-override`, `get-override`, `get-nested`
 
 ```json
-{ "action": "create-nested", "parentUuid": "uuid", "childPrefabPath": "db://assets/prefabs/Child.prefab" }
-{ "action": "create-variant", "prefabPath": "db://assets/prefabs/A.prefab", "savePath": "db://assets/prefabs/A_variant.prefab" }
+{ "action": "create-nested", "parentUuid": "uuid", "prefabPath": "db://assets/prefabs/Child.prefab" }
+{ "action": "create-variant", "prefabPath": "db://assets/prefabs/A.prefab", "targetPath": "db://assets/prefabs/A_variant.prefab" }
 { "action": "apply-override", "uuid": "instance-uuid" }
-{ "action": "revert-override", "uuid": "instance-uuid" }
 { "action": "get-override", "uuid": "instance-uuid" }
-{ "action": "disconnect", "uuid": "instance-uuid" }
 { "action": "get-nested", "uuid": "uuid" }
 ```
 
@@ -126,7 +117,6 @@
 { "action": "list", "folder": "db://assets" }
 { "action": "create", "uuid": "node-uuid", "savePath": "db://assets/prefabs/Template.prefab" }
 { "action": "instantiate", "prefabPath": "db://assets/prefabs/Btn.prefab", "parentUuid": "uuid" }
-{ "action": "save-as-template", "uuid": "node-uuid", "savePath": "db://assets/prefabs/MyTemplate.prefab" }
 { "action": "get-types" }
 ```
 
@@ -136,47 +126,38 @@
 ```json
 { "action": "import", "source": "/path/to/image.png", "targetFolder": "db://assets/textures" }
 { "action": "create", "url": "db://assets/scripts/New.ts", "content": "// script" }
-{ "action": "delete", "url": "db://assets/unused.png" }
-{ "action": "copy", "source": "db://assets/a.png", "target": "db://assets/b.png" }
-{ "action": "move", "source": "db://assets/old.png", "target": "db://assets/new.png" }
-{ "action": "info", "url": "db://assets/player.png" }
 { "action": "list", "type": "texture", "folder": "db://assets" }
 { "action": "save", "url": "db://assets/data.json", "content": "{}" }
-{ "action": "open", "url": "db://assets/scene.scene" }
 ```
 
 ### 11. asset_analyze — 资源分析
-**Actions**: `dependencies`, `unused`, `validate`, `batch`, `manifest`
+**Actions**: `dependencies`, `scan`, `validate`
 
 ```json
 { "action": "dependencies", "urlOrUuid": "db://assets/prefabs/Enemy.prefab", "direction": "dependencies" }
-{ "action": "unused", "directory": "db://assets" }
+{ "action": "scan", "directory": "db://assets" }
 { "action": "validate", "directory": "db://assets" }
-{ "action": "batch", "batchAction": "import", "sourceDirectory": "/path/to/assets", "targetDirectory": "db://assets" }
-{ "action": "manifest", "directory": "db://assets", "format": "json" }
 ```
 
 ### 12. project_manage — 项目管理
-**Actions**: `run`, `build`, `info`, `settings`, `refresh`
+**Actions**: `run`, `build`, `info`, `refresh`
 
 ```json
 { "action": "run", "platform": "browser" }
 { "action": "build", "platform": "web-mobile", "debug": true }
 { "action": "info" }
-{ "action": "settings", "category": "physics" }
 { "action": "refresh", "folder": "db://assets" }
 ```
 
 ### 13. build_system — 构建系统
-**Actions**: `build`, `preview`, `settings`, `status`, `open`, `start`, `stop`
+**Actions**: `build`, `preview`, `status`, `stop`, `start-preview`, `reload-preview`
 
 ```json
 { "action": "build", "platform": "web-mobile", "debug": true, "buildOptions": { "sourceMap": true } }
 { "action": "preview", "platform": "browser" }
-{ "action": "settings" }
 { "action": "status" }
-{ "action": "open" }
-{ "action": "start", "port": 7456 }
+{ "action": "start-preview" }
+{ "action": "reload-preview" }
 { "action": "stop" }
 ```
 
@@ -201,59 +182,48 @@
 
 ---
 
-## Editor 工具 (14)
+## Editor 工具 (13)
 
 ### 16. selection_manage — 选区管理
 **Actions**: `select`, `unselect`, `get`, `last`, `type`, `clear`, `hover`, `focus`
 
 ```json
 { "action": "select", "uuids": ["uuid1", "uuid2"], "type": "node" }
-{ "action": "unselect", "uuids": ["uuid1"], "type": "node" }
 { "action": "get", "type": "node" }
 { "action": "last" }
-{ "action": "type" }
 { "action": "clear", "type": "node" }
 { "action": "hover", "uuid": "uuid", "type": "node" }
-{ "action": "focus", "uuid": "uuid" }
 ```
 
 ### 17. preferences_manage — 偏好设置
-**Actions**: `get`, `set`, `reset`, `export`, `import`, `open`, `list`
+**Actions**: `get`, `set`, `list`, `open`
 
 ```json
 { "action": "get", "name": "general", "path": "editor.theme" }
 { "action": "set", "name": "general", "path": "editor.theme", "value": "dark" }
-{ "action": "reset", "name": "general" }
-{ "action": "export", "exportPath": "/path/to/settings.json" }
-{ "action": "import", "importPath": "/path/to/settings.json" }
-{ "action": "open", "tab": "general" }
 { "action": "list" }
+{ "action": "open", "tab": "general" }
 ```
 
 ### 18. broadcast_message — 广播消息
-**Actions**: `listen`, `stop`, `send`, `log`, `clear`, `listeners`, `events`
+**Actions**: `send`, `events`
 
 ```json
-{ "action": "listen", "messageType": "scene:change" }
-{ "action": "stop", "messageType": "scene:change" }
 { "action": "send", "message": "custom:event", "data": {} }
-{ "action": "log", "limit": 100 }
-{ "action": "clear" }
-{ "action": "listeners" }
 { "action": "events" }
 ```
 
 ### 19. scene_view — 场景视图
-**Actions**: `focus`, `align`, `gizmo`, `grid`, `mode`, `camera`, `reset`, `status`
+**Actions**: `focus`, `gizmo`, `grid`, `mode`, `camera`, `status`
+
+> 通过 scene 频道公开消息直接控制编辑器视图（change-gizmo-tool / set-grid-visible / change-is2D / focus-camera / align-with-view 等），直接 `exec('scene', ...)`，不走 scene script。`gizmoTool` 合法值以编辑器为准，可用 `status` 查询。
 
 ```json
 { "action": "focus", "uuids": ["uuid"] }
-{ "action": "align" }
-{ "action": "gizmo", "gizmoTool": "position", "coordinate": "local", "pivot": "center" }
+{ "action": "gizmo", "gizmoTool": "move", "coordinate": "local", "pivot": "pivot" }
 { "action": "grid", "visible": true }
 { "action": "mode", "is2D": true }
-{ "action": "camera", "cameraAction": "reset" }
-{ "action": "reset" }
+{ "action": "camera", "cameraAction": "align-view-with-node" }
 { "action": "status" }
 ```
 
@@ -263,19 +233,18 @@
 ```json
 { "action": "status" }
 { "action": "connectivity", "timeout": 5000 }
-{ "action": "network" }
 { "action": "port" }
-{ "action": "ip" }
 { "action": "restart" }
-{ "action": "quit" }
 ```
 
 ### 21. debug_console — 调试控制台
-**Actions**: `get`, `clear`, `execute`
+**Actions**: `query-logs`, `clear-logs`, `execute`
+
+> 日志走 `Editor.Logger`（`query`/`clear`，命名空间 API），脚本执行走 `execute-scene-script`，在场景进程引擎上下文运行。
 
 ```json
-{ "action": "get", "limit": 100, "filter": "error" }
-{ "action": "clear" }
+{ "action": "query-logs" }
+{ "action": "clear-logs" }
 { "action": "execute", "script": "console.log('Hello');" }
 ```
 
@@ -286,7 +255,6 @@
 { "action": "list" }
 { "action": "open", "panelName": "console" }
 { "action": "close", "panelName": "console" }
-{ "action": "focus", "panelName": "scene" }
 { "action": "get-active" }
 ```
 
@@ -297,10 +265,8 @@
 { "action": "list" }
 { "action": "info", "name": "cocos-mcp-server" }
 { "action": "enable", "name": "my-extension" }
-{ "action": "disable", "name": "my-extension" }
 { "action": "reload", "name": "my-extension" }
 { "action": "install", "path": "/path/to/extension" }
-{ "action": "uninstall", "name": "my-extension" }
 ```
 
 ### 24. scene_analysis — 场景分析
@@ -308,12 +274,9 @@
 
 ```json
 { "action": "statistics" }
-{ "action": "node-count" }
-{ "action": "component-count" }
 { "action": "draw-call-info" }
 { "action": "find-heavy", "threshold": 10 }
 { "action": "find-duplicates" }
-{ "action": "optimize" }
 { "action": "texture-memory", "folder": "db://assets" }
 ```
 
@@ -333,7 +296,6 @@
 ```json
 { "action": "info", "message": "Operation completed", "title": "Info" }
 { "action": "warn", "message": "This will delete the node. Continue?", "buttons": ["OK", "Cancel"] }
-{ "action": "error", "message": "Failed to load scene", "detail": "File not found" }
 { "action": "save", "title": "Save Prefab", "filters": [{"name": "Prefab", "extensions": ["prefab"]}] }
 { "action": "select", "type": "file", "multi": true, "filters": [{"name": "Images", "extensions": ["png","jpg"]}] }
 ```
@@ -345,8 +307,6 @@
 { "action": "get", "url": "https://example.com/api" }
 { "action": "post", "url": "https://example.com/api", "data": {"key": "value"} }
 { "action": "check_port", "port": 3000 }
-{ "action": "ip_list" }
-{ "action": "test_connect" }
 { "action": "test_host", "host": "192.168.1.100" }
 ```
 
@@ -357,33 +317,24 @@
 { "action": "uuid_generate" }
 { "action": "uuid_compress", "uuid": "15aacf58-f464-4a95-83a9-77f34d08046a" }
 { "action": "uuid_decompress", "uuid": "15aaERuyLMM91E7lVVVVVV" }
-{ "action": "uuid_check", "uuid": "15aacf58-f464-4a95-83a9-77f34d08046a" }
 { "action": "path_join", "paths": ["db://assets", "prefabs", "Player.prefab"] }
 { "action": "path_parse", "path": "db://assets/prefabs/Player.prefab" }
-{ "action": "file_copy", "source": "/tmp/a.json", "target": "/tmp/b.json" }
-{ "action": "file_name", "source": "/tmp/export" }
 { "action": "unzip", "source": "/tmp/pkg.zip", "target": "/tmp/out", "peel": true }
 { "action": "doc_url", "url": "editor/extension/readme.html", "docType": "manual" }
 ```
 
 ---
 
-## Feature 工具 (27)
+## Feature 工具 (28)
 
 ### 29. camera_manage — 相机管理
 **Actions**: `add`, `remove`, `get`, `set-projection`, `set-fov`, `set-ortho-size`, `set-near-far`, `set-clear`, `set-priority`, `set-target-texture`
 
 ```json
 { "action": "add", "uuid": "uuid" }
-{ "action": "remove", "uuid": "uuid" }
-{ "action": "get", "uuid": "uuid" }
 { "action": "set-projection", "uuid": "uuid", "projection": "perspective" }
 { "action": "set-fov", "uuid": "uuid", "fov": 60 }
-{ "action": "set-ortho-size", "uuid": "uuid", "orthoHeight": 480 }
-{ "action": "set-near-far", "uuid": "uuid", "near": 0.1, "far": 1000 }
 { "action": "set-clear", "uuid": "uuid", "clearColor": {"r":0,"g":0,"b":0,"a":255}, "clearFlags": 7 }
-{ "action": "set-priority", "uuid": "uuid", "priority": 0 }
-{ "action": "set-target-texture", "uuid": "uuid", "renderTextureUuid": "rt-uuid" }
 ```
 
 ### 30. light_manage — 灯光管理
@@ -391,12 +342,8 @@
 
 ```json
 { "action": "add", "uuid": "uuid", "lightType": "DirectionalLight" }
-{ "action": "remove", "uuid": "uuid" }
-{ "action": "get", "uuid": "uuid" }
 { "action": "set-color", "uuid": "uuid", "color": {"r":255,"g":255,"b":255,"a":255} }
 { "action": "set-intensity", "uuid": "uuid", "intensity": 1.0 }
-{ "action": "set-range", "uuid": "uuid", "range": 10 }
-{ "action": "set-spot-angle", "uuid": "uuid", "spotAngle": 30 }
 { "action": "set-shadow", "uuid": "uuid", "enabled": true }
 ```
 
@@ -405,11 +352,9 @@
 
 ```json
 { "action": "list" }
-{ "action": "info", "url": "db://assets/materials/MyMat.mtl" }
 { "action": "create", "savePath": "db://assets/materials/New.mtl", "effectPath": "db://assets/effects/unlit.effect" }
-{ "action": "delete", "url": "db://assets/materials/Old.mtl" }
 { "action": "set-property", "uuid": "uuid", "propertyName": "mainColor", "value": {"r":255,"g":0,"b":0,"a":255}, "propertyType": "color" }
-{ "action": "copy", "source": "db://assets/mat/A.mtl", "target": "db://assets/mat/B.mtl" }
+{ "action": "get-properties", "uuid": "uuid" }
 ```
 
 ### 32. particle_manage — 粒子系统
@@ -418,7 +363,6 @@
 ```json
 { "action": "add", "uuid": "uuid" }
 { "action": "set-rate", "uuid": "uuid", "rate": 50 }
-{ "action": "set-duration", "uuid": "uuid", "duration": 5 }
 { "action": "set-texture", "uuid": "uuid", "spriteFramePath": "db://assets/textures/particle.png" }
 ```
 
@@ -437,7 +381,6 @@
 ```json
 { "action": "list" }
 { "action": "info", "url": "db://assets/effects/unlit.effect" }
-{ "action": "create", "url": "db://assets/effects/MyShader.effect" }
 { "action": "save", "url": "db://assets/effects/MyShader.effect", "content": "..." }
 { "action": "compile", "url": "db://assets/effects/MyShader.effect" }
 ```
@@ -468,10 +411,7 @@
 ```json
 { "action": "add", "uuid": "uuid" }
 { "action": "set-clip", "uuid": "uuid", "clipPath": "db://assets/audio/bgm.mp3" }
-{ "action": "set-volume", "uuid": "uuid", "volume": 0.8 }
-{ "action": "set-loop", "uuid": "uuid", "loop": true }
 { "action": "play", "uuid": "uuid" }
-{ "action": "stop", "uuid": "uuid" }
 { "action": "list-clips" }
 ```
 
@@ -492,7 +432,6 @@
 { "action": "add", "uuid": "uuid" }
 { "action": "set-data", "uuid": "uuid", "skeletonDataPath": "db://assets/spine/hero/skeleton.json" }
 { "action": "set-animation", "uuid": "uuid", "animationName": "run", "loop": true }
-{ "action": "set-skin", "uuid": "uuid", "skinName": "armor" }
 { "action": "get-info", "uuid": "uuid" }
 ```
 
@@ -571,10 +510,6 @@
 { "action": "button", "uuid": "uuid", "transition": "COLOR" }
 { "action": "layout", "uuid": "uuid", "layoutType": "HORIZONTAL" }
 { "action": "widget", "uuid": "uuid", "isAlignTop": true, "top": 10 }
-{ "action": "progress", "uuid": "uuid", "progress": 0.75 }
-{ "action": "editbox", "uuid": "uuid", "placeholder": "Enter..." }
-{ "action": "slider", "uuid": "uuid", "sliderValue": 0.5 }
-{ "action": "toggle", "uuid": "uuid", "isChecked": true }
 ```
 
 ### 48. animation_manage — 动画管理
@@ -584,9 +519,7 @@
 { "action": "component", "uuid": "uuid", "componentAction": "add" }
 { "action": "play", "uuid": "uuid", "clipName": "run", "loop": true, "speed": 1.0 }
 { "action": "pause", "uuid": "uuid" }
-{ "action": "stop", "uuid": "uuid" }
 { "action": "track", "uuid": "uuid", "clipName": "idle" }
-{ "action": "record", "recordAction": "start", "uuid": "uuid" }
 ```
 
 ### 49. script_manage — 脚本管理
@@ -595,8 +528,6 @@
 ```json
 { "action": "attach", "uuid": "uuid", "scriptPath": "db://assets/scripts/Player.ts" }
 { "action": "create", "scriptName": "Enemy", "savePath": "db://assets/scripts" }
-{ "action": "compile" }
-{ "action": "query", "scriptPath": "db://assets/scripts/Player.ts" }
 { "action": "methods", "className": "Player" }
 { "action": "execute", "uuid": "uuid", "methodName": "takeDamage", "methodArgs": [10] }
 { "action": "properties", "uuid": "uuid", "className": "Player" }
@@ -607,7 +538,7 @@
 
 ```json
 { "action": "add", "uuid": "uuid" }
-{ "action": "set-colors", "uuid": "uuid", "fillColor": {"r":255,"g":0,"b":0,"a":255}, "strokeColor": {"r":0,"g":0,"b":0,"a":255}, "lineWidth": 2 }
+{ "action": "set-colors", "uuid": "uuid", "fillColor": {"r":255,"g":0,"b":0,"a":255}, "lineWidth": 2 }
 { "action": "draw", "uuid": "uuid", "commands": [{"type":"circle","params":[0,0,50]},{"type":"fill"}] }
 { "action": "clear", "uuid": "uuid" }
 ```
@@ -639,7 +570,6 @@
 { "action": "create", "savePath": "db://assets/atlas/UI.pac" }
 { "action": "pack", "url": "db://assets/atlas/UI.pac" }
 { "action": "get-sprites", "url": "db://assets/atlas/UI.pac" }
-{ "action": "set-settings", "url": "db://assets/atlas/UI.pac", "maxWidth": 2048, "maxHeight": 2048, "padding": 2 }
 ```
 
 ### 54. texture_manage — 纹理管理
@@ -668,7 +598,6 @@
 { "action": "list" }
 { "action": "create", "folderPath": "db://assets/resources", "bundleName": "resources" }
 { "action": "set-priority", "url": "db://assets/resources", "priority": 1 }
-{ "action": "set-compression", "url": "db://assets/resources", "compressionType": "merge-split" }
 { "action": "get-assets", "url": "db://assets/resources" }
 ```
 
@@ -678,9 +607,9 @@
 
 - **版本**: 0.1.0
 - **架构**: Unified Tool + Action
-- **工具数量**: 56 个核心工具
-- **Action 总数**: 372 个操作
-- **场景脚本方法**: 38 个
+- **工具数量**: 56（Core 15 / Editor 13 / Feature 28）
+- **Action 总数**: 362（以 `GET /health` 为准）
+- **场景脚本方法**: 28
 - **兼容性**: Cocos Creator 3.8.6+
 - **传输协议**: HTTP JSON-RPC + SSE
 - **协议**: Model Context Protocol (MCP)

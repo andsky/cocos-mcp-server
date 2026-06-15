@@ -9,6 +9,10 @@
 import { ToolResponse } from '../types';
 import { UnifiedToolBase } from './unified-tool-base';
 
+/** Editor.Panel 手册无列举已打开面板的方法时，返回给客户端的如实说明。 */
+const NO_LIST_PANELS_MSG =
+    'Editor.Panel 未提供列举已打开面板的方法（手册仅支持 open/close/focus/has）。可用 has 查询单个面板，或用 open 打开。';
+
 export class PanelManage extends UnifiedToolBase {
     name = 'panel_manage';
     description = '面板管理工具。支持操作: list(列出面板), open(打开面板), close(关闭面板), focus(聚焦面板), get-active(获取活动面板)';
@@ -40,13 +44,30 @@ export class PanelManage extends UnifiedToolBase {
         }
     }
 
+    /**
+     * 探测已打开的面板。
+     * Editor.Panel 手册仅提供 open/close/focus/has/define，没有列举已打开面板的方法；
+     * 运行时若存在非公开 getPanels 则尽力使用，否则如实返回 available:false，
+     * 而不是用空数组伪装"当前没有面板"。
+     */
+    private collectPanels(): { available: boolean; panels: any[] } {
+        const Panel: any = Editor.Panel;
+        if (typeof Panel.getPanels === 'function') {
+            return { available: true, panels: Panel.getPanels() || [] };
+        }
+        return { available: false, panels: [] };
+    }
+
     private async listPanels(args: any): Promise<ToolResponse> {
         try {
-            const panels = Editor.Panel.getPanels ? Editor.Panel.getPanels() : [];
-            return {
-                success: true,
-                data: { total: panels.length, panels }
-            };
+            const { available, panels } = this.collectPanels();
+            if (!available) {
+                return {
+                    success: true,
+                    data: { total: 0, panels: [], available: false, message: NO_LIST_PANELS_MSG }
+                };
+            }
+            return { success: true, data: { total: panels.length, panels, available: true } };
         } catch (err: any) {
             return { success: false, error: err.message || String(err) };
         }
@@ -102,12 +123,15 @@ export class PanelManage extends UnifiedToolBase {
 
     private async getActivePanels(args: any): Promise<ToolResponse> {
         try {
-            const panels = Editor.Panel.getPanels ? Editor.Panel.getPanels() : [];
+            const { available, panels } = this.collectPanels();
+            if (!available) {
+                return {
+                    success: true,
+                    data: { total: 0, activePanels: [], available: false, message: NO_LIST_PANELS_MSG }
+                };
+            }
             const activePanels = panels.filter((p: any) => p.active !== false);
-            return {
-                success: true,
-                data: { total: activePanels.length, activePanels }
-            };
+            return { success: true, data: { total: activePanels.length, activePanels, available: true } };
         } catch (err: any) {
             return { success: false, error: err.message || String(err) };
         }

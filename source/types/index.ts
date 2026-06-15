@@ -13,7 +13,6 @@ export interface ServerConfig {
     port: number;
     autoStart: boolean;
     enableDebugLog: boolean;
-    allowedOrigins: string[];
     maxConnections: number;
 }
 

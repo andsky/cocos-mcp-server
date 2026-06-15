@@ -68,7 +68,7 @@ export class MCPServer {
 
 
     getStatus(): ServerStatus {
-        return { running: !!this.server, port: this.config.port, clients: 0 };
+        return { running: !!this.server, port: this.config.port, clients: this.sseSessions.size };
     }
 
     getToolDefinitions(): ToolDefinition[] {
@@ -87,12 +87,6 @@ export class MCPServer {
 
     updateToolFilter(enabled: Array<{ name: string }>): void {
         this.refreshToolDefs(enabled);
-    }
-
-    async updateConfig(cfg: ServerConfig): Promise<void> {
-        this.config = cfg;
-        if (this.server) { this.stop(); }
-        await this.start();
     }
 
 
@@ -271,8 +265,12 @@ export class MCPServer {
         }
 
         const toolName = pathname.replace('/api/', '').replace(/\//g, '_');
-        let params: any = {};
-        try { params = body ? JSON.parse(body) : {}; } catch { /* empty */ }
+        let params: any;
+        try {
+            params = body ? JSON.parse(body) : {};
+        } catch (e: any) {
+            return this.sendJson(res, 400, { success: false, error: `Bad JSON: ${e.message}` });
+        }
 
         try {
             const result = await this.executeToolCall(toolName, params);
@@ -305,8 +303,9 @@ export class MCPServer {
 
 
     private setCors(res: http.ServerResponse): void {
-        const origins = this.config?.allowedOrigins || ['*'];
-        res.setHeader('Access-Control-Allow-Origin', origins.includes('*') ? '*' : '');
+        // Local dev tool — wide-open CORS. No security boundary needed; the
+        // server binds 127.0.0.1 only and runs inside the editor process.
+        res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     }

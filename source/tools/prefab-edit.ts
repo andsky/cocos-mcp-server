@@ -9,8 +9,8 @@ import { UnifiedToolBase } from './unified-tool-base';
 
 export class PrefabEdit extends UnifiedToolBase {
     name = 'prefab_edit';
-    description = '预制体编辑工具。支持操作: create-nested(创建嵌套实例), create-variant(创建变体), apply-override(应用覆盖), revert-override(还原覆盖), get-override(获取覆盖差异), disconnect(断开预制体连接), get-nested(获取嵌套结构)';
-    actions = ['create-nested', 'create-variant', 'apply-override', 'revert-override', 'get-override', 'disconnect', 'get-nested'];
+    description = '预制体编辑工具。支持操作: create-nested(创建嵌套实例), create-variant(创建变体), apply-override(应用覆盖), revert-override(还原覆盖), get-override(获取覆盖差异), get-nested(获取嵌套结构)';
+    actions = ['create-nested', 'create-variant', 'apply-override', 'revert-override', 'get-override', 'get-nested'];
 
     getUnifiedSchema(): any {
         return {
@@ -35,7 +35,6 @@ export class PrefabEdit extends UnifiedToolBase {
             case 'apply-override': return await this.applyOverride(args);
             case 'revert-override': return await this.revertOverride(args);
             case 'get-override': return await this.getOverride(args);
-            case 'disconnect': return await this.disconnectPrefab(args);
             case 'get-nested': return await this.getNested(args);
             default: return { success: false, error: `Unknown action: ${action}` };
         }
@@ -140,24 +139,6 @@ export class PrefabEdit extends UnifiedToolBase {
         return {
             success: true,
             data: { uuid: args.uuid, overrides, hasOverrides: overrides.length > 0 }
-        };
-    }
-
-    private async disconnectPrefab(args: any): Promise<ToolResponse> {
-        const missing = this.requireParams(args, 'uuid');
-        if (missing) return missing;
-
-        const result = await this.exec('scene', 'execute-scene-script', {
-            name: 'cocos-mcp-server',
-            method: 'unlinkPrefab',
-            args: [args.uuid]
-        });
-        if (!result.success) return result;
-
-        return {
-            success: true,
-            message: 'Prefab connection disconnected',
-            data: { uuid: args.uuid }
         };
     }
 

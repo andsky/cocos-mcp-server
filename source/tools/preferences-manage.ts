@@ -49,7 +49,8 @@ export class PreferencesManage extends UnifiedToolBase {
         if (missing) return missing;
 
         try {
-            const value = Editor.Profile.getConfig(args.name, args.path);
+            // Editor.Profile.getConfig 返回 Promise — 必须 await，否则 value 是个 Promise 对象，序列化后变空
+            const value = await Editor.Profile.getConfig(args.name, args.path);
             return {
                 success: true,
                 data: { name: args.name, path: args.path, value }
@@ -64,7 +65,8 @@ export class PreferencesManage extends UnifiedToolBase {
         if (missing) return missing;
 
         try {
-            Editor.Profile.setConfig(args.name, args.path, args.value);
+            // await：等写入完成再报成功，并让异常进入 catch
+            await Editor.Profile.setConfig(args.name, args.path, args.value);
             return {
                 success: true,
                 message: `Preference '${args.path}' set successfully`,

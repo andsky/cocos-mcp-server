@@ -16,7 +16,6 @@ export const DEFAULT_CONFIG: ServerConfig = {
     port: 3000,
     autoStart: false,
     enableDebugLog: false,
-    allowedOrigins: ['*'],
     maxConnections: 10,
 };
 
@@ -29,7 +28,6 @@ export async function loadConfig(): Promise<ServerConfig> {
         const port = await Editor.Profile.getConfig(PKG, 'port');
         const autoStart = await Editor.Profile.getConfig(PKG, 'autoStart');
         const enableDebugLog = await Editor.Profile.getConfig(PKG, 'enableDebugLog');
-        const allowedOrigins = await Editor.Profile.getConfig(PKG, 'allowedOrigins');
         const maxConnections = await Editor.Profile.getConfig(PKG, 'maxConnections');
 
         // Merge with defaults so undefined fields (unset tiers) get sane values
@@ -38,7 +36,6 @@ export async function loadConfig(): Promise<ServerConfig> {
             ...(port !== undefined && { port }),
             ...(autoStart !== undefined && { autoStart }),
             ...(enableDebugLog !== undefined && { enableDebugLog }),
-            ...(allowedOrigins !== undefined && { allowedOrigins }),
             ...(maxConnections !== undefined && { maxConnections }),
         };
     } catch {
@@ -56,7 +53,6 @@ export async function saveConfig(cfg: ServerConfig): Promise<void> {
         await Editor.Profile.setConfig(PKG, 'port', cfg.port, 'local');
         await Editor.Profile.setConfig(PKG, 'autoStart', cfg.autoStart, 'local');
         await Editor.Profile.setConfig(PKG, 'enableDebugLog', cfg.enableDebugLog, 'local');
-        await Editor.Profile.setConfig(PKG, 'allowedOrigins', cfg.allowedOrigins, 'local');
         await Editor.Profile.setConfig(PKG, 'maxConnections', cfg.maxConnections, 'local');
     } catch (err) {
         console.error('[MCP] saveConfig via Editor.Profile failed:', err);
